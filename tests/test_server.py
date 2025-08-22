@@ -430,6 +430,7 @@ def test_create_party_available_when_writes_enabled(client, headers, monkeypatch
         assert "update_party" in tool_names
         assert "create_tag" in tool_names
         assert "create_note" in tool_names
+        assert "update_note" in tool_names
 
 
 def test_create_party_person(client, headers, monkeypatch):
@@ -905,3 +906,128 @@ def test_create_note_validates_single_entity(client, headers, monkeypatch):
         assert response.status_code == 200
         result = response.json()
         assert result.get("result", {}).get("isError") is True
+
+
+def test_update_note(client, headers, monkeypatch):
+    """Test updating a note."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the Capsule API response for note update
+    async def mock_update_note(*args, **kwargs):
+        # Verify the request
+        assert args[0] == "PUT"
+        assert "entries/99999" in args[1]
+        assert "json" in kwargs
+        assert "entry" in kwargs["json"]
+        entry = kwargs["json"]["entry"]
+        assert entry["content"] == "Updated meeting notes with action items"
+        
+        # Return mock updated note
+        return {
+            "entry": {
+                "id": 99999,
+                "type": "note",
+                "content": "Updated meeting notes with action items",
+                "party": {"id": 12345, "name": "John Doe"},
+                "updatedAt": "2024-01-02T10:00:00Z"
+            }
+        }
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_update_note)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "update_note",
+                    "arguments": {
+                        "note_id": 99999,
+                        "content": "Updated meeting notes with action items",
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert "entry" in data
+        assert data["entry"]["id"] == 99999
+        assert data["entry"]["content"] == "Updated meeting notes with action items"
+
+
+def test_update_note_validates_required_fields(client, headers, monkeypatch):
+    """Test that update_note validates required fields."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    with TestClient(test_app) as test_client:
+        # Test with missing note_id
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "update_note",
+                    "arguments": {
+                        "content": "Test content",
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        result = response.json()
+        assert result.get("result", {}).get("isError") is True
+        
+        # Test with empty content
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "update_note",
+                    "arguments": {
+                        "note_id": 123,
+                        "content": "",
+                    },
+                },
+                "id": 2,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        result = response.json()
+        assert result.get("result", {}).get("isError") is True
+        

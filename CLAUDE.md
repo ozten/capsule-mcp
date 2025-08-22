@@ -77,6 +77,7 @@ uv sync --dev                       # Install with dev dependencies (black, isor
   - `update_party` - Update existing contacts (names, job titles, contact details)
 - **Communication**:
   - `create_note` - Add notes to parties, opportunities, or projects
+  - `update_note` - Update existing note content
 - **Tags**: `create_tag` - Create tags for parties, opportunities, or cases
 
 ## Environment Configuration

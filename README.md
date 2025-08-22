@@ -330,6 +330,11 @@ When write mode is enabled, the following operations become available:
   - Track meeting notes, call summaries, or important information
   - Notes become part of the entity's timeline/history
 
+- **`update_note`**: Modify existing notes:
+  - Update note content after creation
+  - Correct or add information to existing notes
+  - Maintain accurate timeline records
+
 - **`create_tag`**: Create tags for organizing your CRM data:
   - Create tags for parties (contacts), opportunities, or cases
   - Add descriptions to tags for better organization

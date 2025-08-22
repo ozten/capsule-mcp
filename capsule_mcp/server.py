@@ -485,12 +485,42 @@ async def create_note(
     request_body = {"entry": entry_data}
     return await capsule_request("POST", "entries", json=request_body)
 
+# Define the update_note function separately so it can be conditionally registered
+async def update_note(
+    note_id: int,
+    content: str,
+) -> Dict[str, Any]:
+    """Update the content of an existing note.
+    
+    Args:
+        note_id: ID of the note/entry to update (required)
+        content: Updated note content/text (required)
+        
+    Returns:
+        The updated note entry with its details
+    """
+    if not note_id:
+        raise ValueError("Field 'note_id' is required")
+    
+    if not content or not content.strip():
+        raise ValueError("Field 'content' is required and cannot be empty")
+    
+    # Build the update data
+    entry_data = {
+        "content": content.strip()
+    }
+    
+    # Send the update request
+    request_body = {"entry": entry_data}
+    return await capsule_request("PUT", f"entries/{note_id}", json=request_body)
+
 # Register the write tools conditionally based on environment variable
 if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(create_party)
     mcp.tool(update_party)
     mcp.tool(create_tag)
     mcp.tool(create_note)
+    mcp.tool(update_note)
 
 
 @mcp.tool
