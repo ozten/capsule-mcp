@@ -1227,6 +1227,29 @@ async def delete_opportunity(
     return await capsule_request("DELETE", f"opportunities/{opportunity_id}")
 
 
+async def delete_task(
+    task_id: int,
+) -> Dict[str, Any]:
+    """Permanently delete a task from Capsule CRM.
+    
+    ⚠️ WARNING: This operation is IRREVERSIBLE. The task and all associated data
+    will be permanently deleted. This includes:
+    - All task details and history
+    - All completion information
+    - All custom field values
+    - All tags and associations
+    - Links to parties, opportunities, and cases
+    
+    Args:
+        task_id: ID of the task to delete (required)
+        
+    Returns:
+        Success response from the API (typically empty with 204 status)
+    """
+    # Send the delete request
+    return await capsule_request("DELETE", f"tasks/{task_id}")
+
+
 # Register the write tools conditionally based on environment variable
 if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(create_party)
@@ -1252,6 +1275,7 @@ if ENABLE_CAPSULECRM_WRITES:
 if ENABLE_CAPSULECRM_DELETES:
     mcp.tool(delete_party)
     mcp.tool(delete_opportunity)
+    mcp.tool(delete_task)
 
 
 @mcp.tool

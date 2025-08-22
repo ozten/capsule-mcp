@@ -437,6 +437,13 @@ When delete mode is enabled (requires both `ENABLE_CAPSULECRM_WRITES="true"` and
   - Use with extreme caution - no undo available
   - Agent/client layer should confirm with user before calling
 
+- **`delete_task`**: Permanently delete tasks:
+  - ⚠️ **IRREVERSIBLE**: Deletes task and all data permanently
+  - Removes all completion info, custom fields, tags, and associations
+  - Deletes links to parties, opportunities, and cases
+  - Use with extreme caution - no undo available
+  - Agent/client layer should confirm with user before calling
+
 ### Security Considerations
 
 - Write operations can modify your CRM data permanently

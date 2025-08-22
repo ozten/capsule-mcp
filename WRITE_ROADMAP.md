@@ -25,9 +25,10 @@ This document outlines the roadmap for implementing write operations in the Caps
 - **update_custom_field_values** - Batch update multiple custom fields
 - **clear_custom_field_value** - Remove custom field values
 
-### ✅ Implemented Delete Operations (2 tools - requires ENABLE_CAPSULECRM_DELETES)
+### ✅ Implemented Delete Operations (3 tools - requires ENABLE_CAPSULECRM_DELETES)
 - **delete_party** - Permanently delete contacts (irreversible operation)
 - **delete_opportunity** - Permanently delete opportunities (irreversible operation)
+- **delete_task** - Permanently delete tasks (irreversible operation)
 
 ### 📖 Existing Read Operations
 The server currently has 27 read-only tools covering:
@@ -60,7 +61,7 @@ The server currently has 27 read-only tools covering:
 - ✅ `create_task` - Create tasks with due dates and assignments
 - ✅ `update_task` - Update task details and status
 - ✅ `complete_task` - Mark tasks as complete
-- `delete_task` - Remove tasks
+- ✅ `delete_task` - Remove tasks
 
 **Rationale:** Tasks drive daily workflows and user productivity.
 
@@ -194,7 +195,7 @@ Each write operation should have tests for:
 ### Phase 4 (Delete Operations)
 - ✅ delete_party - Remove contacts (implemented with ENABLE_CAPSULECRM_DELETES)
 - ✅ delete_opportunity - Remove opportunities (implemented with ENABLE_CAPSULECRM_DELETES)
-- delete_task - Remove tasks
+- ✅ delete_task - Remove tasks (implemented with ENABLE_CAPSULECRM_DELETES)
 - delete_project - Remove projects
 - delete_tag - Remove unused tags
 - delete_note - Remove notes
