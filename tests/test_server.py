@@ -1564,6 +1564,260 @@ def test_remove_party_from_opportunity(client, headers, monkeypatch):
         assert data == {}
 
 
+def test_create_task(client, headers, monkeypatch):
+    """Test creating a task."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the capsule_request function
+    async def mock_create_task(method, endpoint, **kwargs):
+        assert method == "POST"
+        assert endpoint == "tasks"
+        assert "json" in kwargs
+        assert "task" in kwargs["json"]
+        task = kwargs["json"]["task"]
+        assert task["description"] == "Follow up with client"
+        assert task["dueOn"] == "2024-12-31"
+        assert task["dueTime"] == "14:30"
+        assert task["owner"]["id"] == 5
+        assert task["party"]["id"] == 12345
+        assert task["status"] == "OPEN"
+        
+        # Return mock created task
+        return {
+            "task": {
+                "id": 99999,
+                "description": "Follow up with client",
+                "dueOn": "2024-12-31",
+                "dueTime": "14:30",
+                "status": "OPEN",
+                "owner": {"id": 5, "name": "John Doe"},
+                "party": {"id": 12345, "name": "Acme Corp"},
+                "createdAt": "2024-01-01T10:00:00Z"
+            }
+        }
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_create_task)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "create_task",
+                    "arguments": {
+                        "description": "Follow up with client",
+                        "due_on": "2024-12-31",
+                        "due_time": "14:30",
+                        "owner_id": 5,
+                        "party_id": 12345,
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert "task" in data
+        assert data["task"]["id"] == 99999
+        assert data["task"]["description"] == "Follow up with client"
+
+
+def test_create_task_validates_single_entity(client, headers, monkeypatch):
+    """Test that create_task only allows one entity association."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    with TestClient(test_app) as test_client:
+        # Test with multiple entity associations
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "create_task",
+                    "arguments": {
+                        "description": "Test task",
+                        "due_on": "2024-12-31",
+                        "party_id": 123,
+                        "opportunity_id": 456,  # Can't have both
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        result = response.json()
+        assert result.get("result", {}).get("isError") is True
+        error_text = result["result"]["content"][0]["text"]
+        assert "Only one of party_id, opportunity_id, or case_id can be set" in error_text
+
+
+def test_update_task(client, headers, monkeypatch):
+    """Test updating a task."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the capsule_request function
+    async def mock_update_task(method, endpoint, **kwargs):
+        assert method == "PUT"
+        assert endpoint == "tasks/99999"
+        assert "json" in kwargs
+        assert "task" in kwargs["json"]
+        task = kwargs["json"]["task"]
+        assert task["description"] == "Updated follow up"
+        assert task["status"] == "PENDING"
+        assert task["dueOn"] == "2025-01-15"
+        
+        # Return mock updated task
+        return {
+            "task": {
+                "id": 99999,
+                "description": "Updated follow up",
+                "dueOn": "2025-01-15",
+                "status": "PENDING",
+                "owner": {"id": 5, "name": "John Doe"},
+                "updatedAt": "2024-01-02T10:00:00Z"
+            }
+        }
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_update_task)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "update_task",
+                    "arguments": {
+                        "task_id": 99999,
+                        "description": "Updated follow up",
+                        "due_on": "2025-01-15",
+                        "status": "PENDING",
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert "task" in data
+        assert data["task"]["id"] == 99999
+        assert data["task"]["description"] == "Updated follow up"
+        assert data["task"]["status"] == "PENDING"
+
+
+def test_complete_task(client, headers, monkeypatch):
+    """Test completing a task."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the capsule_request function
+    async def mock_complete_task(method, endpoint, **kwargs):
+        assert method == "PUT"
+        assert endpoint == "tasks/99999"
+        assert "json" in kwargs
+        assert "task" in kwargs["json"]
+        task = kwargs["json"]["task"]
+        assert task["status"] == "COMPLETED"
+        
+        # Return mock completed task
+        return {
+            "task": {
+                "id": 99999,
+                "description": "Follow up with client",
+                "status": "COMPLETED",
+                "completedAt": "2024-01-02T15:00:00Z",
+                "completedBy": {"id": 5, "name": "John Doe"}
+            }
+        }
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_complete_task)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "complete_task",
+                    "arguments": {
+                        "task_id": 99999,
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert "task" in data
+        assert data["task"]["id"] == 99999
+        assert data["task"]["status"] == "COMPLETED"
+        assert "completedAt" in data["task"]
+
+
 def test_update_note_validates_required_fields(client, headers, monkeypatch):
     """Test that update_note validates required fields."""
     import sys

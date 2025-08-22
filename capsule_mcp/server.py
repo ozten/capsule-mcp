@@ -854,6 +854,207 @@ async def remove_party_from_opportunity(
     return await capsule_request("DELETE", f"opportunities/{opportunity_id}/parties/{party_id}")
 
 
+# Define the create_task function separately so it can be conditionally registered
+async def create_task(
+    description: str,
+    due_on: str,
+    detail: Optional[str] = None,
+    due_time: Optional[str] = None,
+    category: Optional[str] = None,
+    owner_id: Optional[int] = None,
+    party_id: Optional[int] = None,
+    opportunity_id: Optional[int] = None,
+    case_id: Optional[int] = None,
+    status: Optional[Literal["OPEN", "PENDING"]] = "OPEN",
+) -> Dict[str, Any]:
+    """Create a new task.
+    
+    Args:
+        description: Short description of the task (required)
+        due_on: Due date in ISO8601 format (e.g., "2024-12-31") (required)
+        detail: Detailed information about the task
+        due_time: Due time in HH:MM format (e.g., "14:30")
+        category: Task category/type
+        owner_id: ID of the user who owns this task
+        party_id: ID of the contact/party this task relates to
+        opportunity_id: ID of the opportunity this task relates to
+        case_id: ID of the case/project this task relates to
+        status: Initial status - "OPEN" or "PENDING" (default: "OPEN")
+        
+    Returns:
+        The created task object with its assigned ID
+        
+    Note:
+        Only one of party_id, opportunity_id, or case_id can be set.
+    """
+    # Validate that only one entity is linked
+    entity_count = sum(1 for x in [party_id, opportunity_id, case_id] if x is not None)
+    if entity_count > 1:
+        raise ValueError("Only one of party_id, opportunity_id, or case_id can be set")
+    
+    # Build the task data
+    task_data = {
+        "description": description,
+        "dueOn": due_on,
+    }
+    
+    # Add optional fields
+    if detail:
+        task_data["detail"] = detail
+    
+    if due_time:
+        task_data["dueTime"] = due_time
+    
+    if category:
+        task_data["category"] = category
+    
+    if owner_id:
+        task_data["owner"] = {"id": owner_id}
+    
+    if status:
+        task_data["status"] = status
+    
+    # Add entity association
+    if party_id:
+        task_data["party"] = {"id": party_id}
+    elif opportunity_id:
+        task_data["opportunity"] = {"id": opportunity_id}
+    elif case_id:
+        task_data["case"] = {"id": case_id}
+    
+    # Send the request to create the task
+    request_body = {"task": task_data}
+    return await capsule_request("POST", "tasks", json=request_body)
+
+
+# Define the update_task function separately so it can be conditionally registered
+async def update_task(
+    task_id: int,
+    description: Optional[str] = None,
+    detail: Optional[str] = None,
+    due_on: Optional[str] = None,
+    due_time: Optional[str] = None,
+    category: Optional[str] = None,
+    owner_id: Optional[int] = None,
+    party_id: Optional[int] = None,
+    opportunity_id: Optional[int] = None,
+    case_id: Optional[int] = None,
+    status: Optional[Literal["OPEN", "COMPLETED", "PENDING"]] = None,
+    completed_at: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Update an existing task with partial updates.
+    
+    Args:
+        task_id: ID of the task to update (required)
+        description: Updated short description
+        detail: Updated detailed information
+        due_on: Updated due date in ISO8601 format
+        due_time: Updated due time in HH:MM format
+        category: Updated category/type
+        owner_id: ID of the new owner
+        party_id: ID of the contact/party to associate
+        opportunity_id: ID of the opportunity to associate
+        case_id: ID of the case/project to associate
+        status: Updated status - "OPEN", "COMPLETED", or "PENDING"
+        completed_at: Completion timestamp (ISO8601 format) when marking as completed
+        
+    Returns:
+        The updated task object
+        
+    Note:
+        Only one of party_id, opportunity_id, or case_id can be set.
+        Setting status to "COMPLETED" will automatically set completed_at if not provided.
+    """
+    # Build the update data - only include provided fields
+    task_data = {}
+    
+    if description is not None:
+        task_data["description"] = description
+    
+    if detail is not None:
+        task_data["detail"] = detail
+    
+    if due_on is not None:
+        task_data["dueOn"] = due_on
+    
+    if due_time is not None:
+        task_data["dueTime"] = due_time
+    
+    if category is not None:
+        task_data["category"] = category
+    
+    if owner_id is not None:
+        task_data["owner"] = {"id": owner_id}
+    
+    if status is not None:
+        task_data["status"] = status
+        # If marking as completed and no completion time provided, API will use current time
+        if status == "COMPLETED" and completed_at:
+            task_data["completedAt"] = completed_at
+    
+    # Handle entity association updates
+    entity_updates = []
+    if party_id is not None:
+        entity_updates.append(("party", party_id))
+    if opportunity_id is not None:
+        entity_updates.append(("opportunity", opportunity_id))
+    if case_id is not None:
+        entity_updates.append(("case", case_id))
+    
+    # Validate that only one entity is being set
+    if len(entity_updates) > 1:
+        raise ValueError("Only one of party_id, opportunity_id, or case_id can be set")
+    
+    # Apply entity update
+    if entity_updates:
+        entity_type, entity_id = entity_updates[0]
+        if entity_id:
+            task_data[entity_type] = {"id": entity_id}
+        else:
+            # Setting to None/0 clears the association
+            task_data[entity_type] = None
+            # Clear other entity types when setting a new one
+            if entity_type != "party":
+                task_data["party"] = None
+            if entity_type != "opportunity":
+                task_data["opportunity"] = None
+            if entity_type != "case":
+                task_data["case"] = None
+    
+    # Ensure we have something to update
+    if not task_data:
+        raise ValueError("At least one field must be provided to update")
+    
+    # Send the update request
+    request_body = {"task": task_data}
+    return await capsule_request("PUT", f"tasks/{task_id}", json=request_body)
+
+
+# Define the complete_task function separately so it can be conditionally registered
+async def complete_task(
+    task_id: int,
+    completed_at: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Mark a task as completed.
+    
+    This is a convenience function that sets the task status to COMPLETED.
+    
+    Args:
+        task_id: ID of the task to complete (required)
+        completed_at: Optional completion timestamp (ISO8601 format).
+                     If not provided, current time will be used.
+        
+    Returns:
+        The updated task object with completed status
+    """
+    # Use update_task to set status to COMPLETED
+    return await update_task(
+        task_id=task_id,
+        status="COMPLETED",
+        completed_at=completed_at
+    )
+
+
 # Register the write tools conditionally based on environment variable
 if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(create_party)
@@ -868,6 +1069,9 @@ if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(update_opportunity)
     mcp.tool(add_party_to_opportunity)
     mcp.tool(remove_party_from_opportunity)
+    mcp.tool(create_task)
+    mcp.tool(update_task)
+    mcp.tool(complete_task)
 
 
 @mcp.tool

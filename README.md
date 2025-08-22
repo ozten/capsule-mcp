@@ -377,6 +377,23 @@ When write mode is enabled, the following operations become available:
   - Remove contacts no longer involved in deals
   - Maintain accurate stakeholder lists
 
+- **`create_task`**: Create tasks to track work and follow-ups:
+  - Set due dates and times for time-sensitive activities
+  - Assign tasks to team members
+  - Link tasks to contacts, opportunities, or projects
+  - Track tasks with OPEN or PENDING status
+
+- **`update_task`**: Update existing tasks:
+  - Modify descriptions, due dates, and assignments
+  - Change task status between OPEN, PENDING, and COMPLETED
+  - Re-associate tasks with different entities
+  - Update categories and details
+
+- **`complete_task`**: Mark tasks as completed:
+  - Quick completion with automatic timestamp
+  - Optional custom completion time
+  - Streamlined workflow for task closure
+
 ### Security Considerations
 
 - Write operations can modify your CRM data permanently

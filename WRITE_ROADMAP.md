@@ -5,7 +5,7 @@ This document outlines the roadmap for implementing write operations in the Caps
 
 ## Current State
 
-### ✅ Implemented Write Operations (12 tools)
+### ✅ Implemented Write Operations (15 tools)
 - **create_party** - Create contacts (persons or organisations)
 - **update_party** - Update existing contacts with partial updates
 - **create_tag** - Create tags for parties, opportunities, or cases
@@ -18,6 +18,9 @@ This document outlines the roadmap for implementing write operations in the Caps
 - **update_opportunity** - Update opportunity details and pipeline stage
 - **add_party_to_opportunity** - Associate additional contacts with opportunities
 - **remove_party_from_opportunity** - Remove contacts from opportunities
+- **create_task** - Create tasks with due dates and assignments
+- **update_task** - Update task details and status
+- **complete_task** - Mark tasks as completed
 
 ### 📖 Existing Read Operations
 The server currently has 27 read-only tools covering:
@@ -47,9 +50,9 @@ The server currently has 27 read-only tools covering:
 
 ### 2. Tasks Management
 **Tools to implement:**
-- `create_task` - Create tasks with due dates and assignments
-- `update_task` - Update task details and status
-- `complete_task` - Mark tasks as complete
+- ✅ `create_task` - Create tasks with due dates and assignments
+- ✅ `update_task` - Update task details and status
+- ✅ `complete_task` - Mark tasks as complete
 - `delete_task` - Remove tasks
 
 **Rationale:** Tasks drive daily workflows and user productivity.
@@ -161,20 +164,21 @@ Each write operation should have tests for:
 - ✅ update_opportunity - Update opportunity details
 - ✅ add_party_to_opportunity - Associate contacts with opportunities
 - ✅ remove_party_from_opportunity - Remove contacts from opportunities
+- ✅ create_task - Create tasks with assignments
+- ✅ update_task - Update task details
+- ✅ complete_task - Mark tasks complete
 - ✅ Environment variable control
 
-### Phase 2 (Next Priority - Tasks & Projects)
-- create_task - Create tasks with assignments
-- update_task - Update task details
-- complete_task - Mark tasks complete
+### Phase 2 (Next Priority - Projects)
 - create_project - Create projects/cases
 - update_project - Update project details
+- add_party_to_project - Associate contacts with projects
 
 ### Phase 3 (Advanced Associations)
-- add_party_to_project - Associate contacts with projects
 - add_product_to_opportunity - Add line items/products
 - delete_opportunity - Remove opportunities
 - delete_party - Remove contacts
+- delete_task - Remove tasks
 
 ### Phase 4 (Custom Fields & Delete Operations)
 - update_custom_fields - Manage custom field values
