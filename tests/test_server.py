@@ -429,6 +429,7 @@ def test_create_party_available_when_writes_enabled(client, headers, monkeypatch
         assert "create_party" in tool_names
         assert "update_party" in tool_names
         assert "create_tag" in tool_names
+        assert "create_note" in tool_names
 
 
 def test_create_party_person(client, headers, monkeypatch):
@@ -777,3 +778,130 @@ def test_create_tag_validates_entity(client, headers, monkeypatch):
         assert result.get("result", {}).get("isError") is True
         error_text = result["result"]["content"][0]["text"]
         assert "invalid_entity" in error_text
+
+
+def test_create_note_for_party(client, headers, monkeypatch):
+    """Test creating a note for a party."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the Capsule API response for note creation
+    async def mock_create_note(*args, **kwargs):
+        # Verify the request
+        assert args[0] == "POST"
+        assert "entries" in args[1]
+        assert "json" in kwargs
+        assert "entry" in kwargs["json"]
+        entry = kwargs["json"]["entry"]
+        assert entry["type"] == "note"
+        assert entry["content"] == "Important meeting notes"
+        assert entry["party"]["id"] == 12345
+        
+        # Return mock created note
+        return {
+            "entry": {
+                "id": 99999,
+                "type": "note",
+                "content": "Important meeting notes",
+                "party": {"id": 12345, "name": "John Doe"},
+                "createdAt": "2024-01-01T10:00:00Z"
+            }
+        }
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_create_note)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "create_note",
+                    "arguments": {
+                        "content": "Important meeting notes",
+                        "party_id": 12345,
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert "entry" in data
+        assert data["entry"]["id"] == 99999
+        assert data["entry"]["content"] == "Important meeting notes"
+
+
+def test_create_note_validates_single_entity(client, headers, monkeypatch):
+    """Test that create_note requires exactly one entity."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    with TestClient(test_app) as test_client:
+        # Test with no entity provided
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "create_note",
+                    "arguments": {
+                        "content": "Test note",
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        result = response.json()
+        assert result.get("result", {}).get("isError") is True
+        
+        # Test with multiple entities provided
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "create_note",
+                    "arguments": {
+                        "content": "Test note",
+                        "party_id": 123,
+                        "opportunity_id": 456,
+                    },
+                },
+                "id": 2,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        result = response.json()
+        assert result.get("result", {}).get("isError") is True

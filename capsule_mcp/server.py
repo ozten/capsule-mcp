@@ -427,11 +427,70 @@ async def update_party(
     request_body = {"party": party_data}
     return await capsule_request("PUT", f"parties/{party_id}", json=request_body)
 
+# Define the create_note function separately so it can be conditionally registered
+async def create_note(
+    content: str,
+    party_id: Optional[int] = None,
+    opportunity_id: Optional[int] = None,
+    project_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Create a note and attach it to a party, opportunity, or project.
+    
+    Exactly one of party_id, opportunity_id, or project_id must be provided.
+    
+    Args:
+        content: The note content/text (required)
+        party_id: ID of the party (contact) to attach the note to
+        opportunity_id: ID of the opportunity to attach the note to
+        project_id: ID of the project (case) to attach the note to
+        
+    Returns:
+        The created note entry with its assigned ID and details
+    """
+    if not content or not content.strip():
+        raise ValueError("Field 'content' is required and cannot be empty")
+    
+    # Count how many entity IDs were provided
+    entity_count = sum([
+        party_id is not None,
+        opportunity_id is not None,
+        project_id is not None
+    ])
+    
+    if entity_count == 0:
+        raise ValueError(
+            "Exactly one of party_id, opportunity_id, or project_id must be provided"
+        )
+    elif entity_count > 1:
+        raise ValueError(
+            "Only one of party_id, opportunity_id, or project_id can be provided"
+        )
+    
+    # Build the entry object
+    entry_data = {
+        "type": "note",
+        "activityType": -1,  # Standard note type
+        "content": content.strip()
+    }
+    
+    # Add the appropriate entity association
+    if party_id:
+        entry_data["party"] = {"id": party_id}
+    elif opportunity_id:
+        entry_data["opportunity"] = {"id": opportunity_id}
+    elif project_id:
+        entry_data["kase"] = {"id": project_id}  # API uses "kase" for projects
+    
+    # Send the request to create the note
+    request_body = {"entry": entry_data}
+    return await capsule_request("POST", "entries", json=request_body)
+
 # Register the write tools conditionally based on environment variable
 if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(create_party)
     mcp.tool(update_party)
     mcp.tool(create_tag)
+    mcp.tool(create_note)
 
 
 @mcp.tool

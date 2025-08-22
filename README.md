@@ -325,6 +325,11 @@ When write mode is enabled, the following operations become available:
   - Add or update email addresses, phone numbers, and websites
   - Update job titles, names, and about information
 
+- **`create_note`**: Add notes to track communications and information:
+  - Attach notes to parties (contacts), opportunities, or projects
+  - Track meeting notes, call summaries, or important information
+  - Notes become part of the entity's timeline/history
+
 - **`create_tag`**: Create tags for organizing your CRM data:
   - Create tags for parties (contacts), opportunities, or cases
   - Add descriptions to tags for better organization
