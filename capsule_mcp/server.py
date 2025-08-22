@@ -306,9 +306,47 @@ async def create_party(
     request_body = {"party": party_data}
     return await capsule_request("POST", "parties", json=request_body)
 
+# Define the create_tag function separately so it can be conditionally registered
+async def create_tag(
+    entity: EntityType,
+    name: str,
+    description: Optional[str] = None,
+    dataTag: bool = False,
+) -> Dict[str, Any]:
+    """Create a new tag for parties, opportunities, or cases.
+    
+    Args:
+        entity: Entity type - "parties", "opportunities", or "kases" 
+        name: Name of the tag (required)
+        description: Optional description of the tag
+        dataTag: Whether this is a data tag (default: false)
+        
+    Returns:
+        The created tag object with its assigned ID
+    """
+    if entity not in ["parties", "opportunities", "kases"]:
+        raise ValueError(f"Field 'entity' must be 'parties', 'opportunities', or 'kases' (got: {entity})")
+    
+    if not name or not name.strip():
+        raise ValueError("Field 'name' is required and cannot be empty")
+    
+    # Build the tag object
+    tag_data = {
+        "name": name.strip(),
+        "dataTag": dataTag
+    }
+    
+    if description:
+        tag_data["description"] = description.strip()
+    
+    # Send the request to create the tag
+    request_body = {"tag": tag_data}
+    return await capsule_request("POST", f"{entity}/tags", json=request_body)
+
 # Register the write tools conditionally based on environment variable
 if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(create_party)
+    mcp.tool(create_tag)
 
 
 @mcp.tool

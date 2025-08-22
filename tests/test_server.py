@@ -427,6 +427,7 @@ def test_create_party_available_when_writes_enabled(client, headers, monkeypatch
         tools = response.json()["result"]["tools"]
         tool_names = [tool["name"] for tool in tools]
         assert "create_party" in tool_names
+        assert "create_tag" in tool_names
 
 
 def test_create_party_person(client, headers, monkeypatch):
@@ -564,3 +565,109 @@ def test_create_party_organisation(client, headers, monkeypatch):
         assert "party" in data
         assert data["party"]["id"] == 67890
         assert data["party"]["name"] == "Acme Corp"
+
+
+def test_create_tag_for_parties(client, headers, monkeypatch):
+    """Test creating a tag for parties."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the Capsule API response for tag creation
+    async def mock_create_tag(*args, **kwargs):
+        # Verify the request body structure
+        assert "json" in kwargs
+        assert "tag" in kwargs["json"]
+        tag = kwargs["json"]["tag"]
+        assert tag["name"] == "Important Customer"
+        assert tag["dataTag"] is False
+        
+        # Return mock created tag
+        return {
+            "tag": {
+                "id": 12345,
+                "name": "Important Customer",
+                "description": "High value customers",
+                "dataTag": False
+            }
+        }
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_create_tag)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "create_tag",
+                    "arguments": {
+                        "entity": "parties",
+                        "name": "Important Customer",
+                        "description": "High value customers",
+                        "dataTag": False,
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert "tag" in data
+        assert data["tag"]["id"] == 12345
+        assert data["tag"]["name"] == "Important Customer"
+
+
+def test_create_tag_validates_entity(client, headers, monkeypatch):
+    """Test that create_tag validates entity type."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "create_tag",
+                    "arguments": {
+                        "entity": "invalid_entity",
+                        "name": "Test Tag",
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        result = response.json()
+        # Check for error in response - MCP returns isError: true for validation errors
+        assert result.get("result", {}).get("isError") is True
+        error_text = result["result"]["content"][0]["text"]
+        assert "invalid_entity" in error_text

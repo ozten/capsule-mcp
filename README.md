@@ -320,6 +320,11 @@ When write mode is enabled, the following operations become available:
   - Contact details (email, phone, website)
   - Notes and descriptions
 
+- **`create_tag`**: Create tags for organizing your CRM data:
+  - Create tags for parties (contacts), opportunities, or cases
+  - Add descriptions to tags for better organization
+  - Support for data tags
+
 ### Security Considerations
 
 - Write operations can modify your CRM data permanently
