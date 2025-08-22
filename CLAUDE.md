@@ -72,7 +72,9 @@ uv sync --dev                       # Install with dev dependencies (black, isor
 - **System**: `list_currencies`
 
 #### Write Operations (Only when ENABLE_CAPSULECRM_WRITES=true)
-- **Contacts**: `create_party` - Create new person or organisation contacts
+- **Contacts**: 
+  - `create_party` - Create new person or organisation contacts
+  - `update_party` - Update existing contacts (names, job titles, contact details)
 - **Tags**: `create_tag` - Create tags for parties, opportunities, or cases
 
 ## Environment Configuration

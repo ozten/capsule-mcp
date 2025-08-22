@@ -343,9 +343,94 @@ async def create_tag(
     request_body = {"tag": tag_data}
     return await capsule_request("POST", f"{entity}/tags", json=request_body)
 
+# Define the update_party function separately so it can be conditionally registered
+async def update_party(
+    party_id: int,
+    firstName: Optional[str] = None,
+    lastName: Optional[str] = None,
+    name: Optional[str] = None,
+    title: Optional[str] = None,
+    jobTitle: Optional[str] = None,
+    about: Optional[str] = None,
+    emailAddress: Optional[str] = None,
+    emailId: Optional[int] = None,
+    phoneNumber: Optional[str] = None,
+    phoneId: Optional[int] = None,
+    website: Optional[str] = None,
+    websiteId: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Update an existing contact (person or organisation) in Capsule CRM.
+    
+    Only provided fields will be updated. Fields not included remain unchanged.
+    
+    Args:
+        party_id: ID of the party to update (required)
+        firstName: Updated first name (for person)
+        lastName: Updated last name (for person)
+        name: Updated organisation name (for organisation)
+        title: Updated title/salutation (for person)
+        jobTitle: Updated job title (for person)
+        about: Updated notes/description
+        emailAddress: Email address to add or update
+        emailId: ID of existing email to update (if updating specific email)
+        phoneNumber: Phone number to add or update
+        phoneId: ID of existing phone to update (if updating specific phone)
+        website: Website URL to add or update
+        websiteId: ID of existing website to update (if updating specific website)
+        
+    Returns:
+        The updated party object with all current details
+    """
+    if not party_id:
+        raise ValueError("Field 'party_id' is required")
+    
+    # Build the update data - only include fields that were provided
+    party_data = {}
+    
+    # Basic fields
+    if firstName is not None:
+        party_data["firstName"] = firstName
+    if lastName is not None:
+        party_data["lastName"] = lastName
+    if name is not None:
+        party_data["name"] = name
+    if title is not None:
+        party_data["title"] = title
+    if jobTitle is not None:
+        party_data["jobTitle"] = jobTitle
+    if about is not None:
+        party_data["about"] = about
+    
+    # Handle contact details - these are arrays that can be added/updated
+    if emailAddress is not None:
+        email_entry = {"type": "Work", "address": emailAddress}
+        if emailId:
+            email_entry["id"] = emailId  # Update existing
+        party_data["emailAddresses"] = [email_entry]
+    
+    if phoneNumber is not None:
+        phone_entry = {"type": "Work", "number": phoneNumber}
+        if phoneId:
+            phone_entry["id"] = phoneId  # Update existing
+        party_data["phoneNumbers"] = [phone_entry]
+    
+    if website is not None:
+        website_entry = {"type": "Work", "service": "URL", "address": website}
+        if websiteId:
+            website_entry["id"] = websiteId  # Update existing
+        party_data["websites"] = [website_entry]
+    
+    if not party_data:
+        raise ValueError("At least one field to update must be provided")
+    
+    # Send the update request
+    request_body = {"party": party_data}
+    return await capsule_request("PUT", f"parties/{party_id}", json=request_body)
+
 # Register the write tools conditionally based on environment variable
 if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(create_party)
+    mcp.tool(update_party)
     mcp.tool(create_tag)
 
 

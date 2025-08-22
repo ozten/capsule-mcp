@@ -320,6 +320,11 @@ When write mode is enabled, the following operations become available:
   - Contact details (email, phone, website)
   - Notes and descriptions
 
+- **`update_party`**: Update existing contacts with partial updates:
+  - Only update specific fields while leaving others unchanged
+  - Add or update email addresses, phone numbers, and websites
+  - Update job titles, names, and about information
+
 - **`create_tag`**: Create tags for organizing your CRM data:
   - Create tags for parties (contacts), opportunities, or cases
   - Add descriptions to tags for better organization

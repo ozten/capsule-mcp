@@ -427,6 +427,7 @@ def test_create_party_available_when_writes_enabled(client, headers, monkeypatch
         tools = response.json()["result"]["tools"]
         tool_names = [tool["name"] for tool in tools]
         assert "create_party" in tool_names
+        assert "update_party" in tool_names
         assert "create_tag" in tool_names
 
 
@@ -565,6 +566,111 @@ def test_create_party_organisation(client, headers, monkeypatch):
         assert "party" in data
         assert data["party"]["id"] == 67890
         assert data["party"]["name"] == "Acme Corp"
+
+
+def test_update_party(client, headers, monkeypatch):
+    """Test updating a party."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the Capsule API response for party update
+    async def mock_update_party(*args, **kwargs):
+        # Verify the request
+        assert args[0] == "PUT"
+        assert "parties/12345" in args[1]
+        assert "json" in kwargs
+        assert "party" in kwargs["json"]
+        party = kwargs["json"]["party"]
+        
+        # Return mock updated party
+        return {
+            "party": {
+                "id": 12345,
+                "type": "person",
+                "firstName": party.get("firstName", "John"),
+                "lastName": party.get("lastName", "Doe"),
+                "jobTitle": party.get("jobTitle", "Updated Title"),
+                "emailAddresses": party.get("emailAddresses", []),
+                "updatedAt": "2024-01-02T00:00:00Z",
+            }
+        }
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_update_party)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "update_party",
+                    "arguments": {
+                        "party_id": 12345,
+                        "jobTitle": "Updated Title",
+                        "emailAddress": "john.updated@example.com",
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert "party" in data
+        assert data["party"]["id"] == 12345
+        assert data["party"]["jobTitle"] == "Updated Title"
+
+
+def test_update_party_validates_required_id(client, headers, monkeypatch):
+    """Test that update_party requires party_id."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "update_party",
+                    "arguments": {
+                        "firstName": "Test",  # No party_id provided
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        result = response.json()
+        # Should have an error due to missing party_id
+        assert result.get("result", {}).get("isError") is True or "error" in result
 
 
 def test_create_tag_for_parties(client, headers, monkeypatch):
