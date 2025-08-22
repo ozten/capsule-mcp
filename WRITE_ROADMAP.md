@@ -5,12 +5,15 @@ This document outlines the roadmap for implementing write operations in the Caps
 
 ## Current State
 
-### ✅ Implemented Write Operations (5 tools)
+### ✅ Implemented Write Operations (8 tools)
 - **create_party** - Create contacts (persons or organisations)
 - **update_party** - Update existing contacts with partial updates
 - **create_tag** - Create tags for parties, opportunities, or cases
 - **create_note** - Add notes to parties, opportunities, or projects
 - **update_note** - Update content of existing notes
+- **add_tag_to_entity** - Apply existing tags to entities
+- **remove_tag_from_entity** - Remove tags from entities
+- **bulk_tag_entities** - Apply/remove multiple tags to/from multiple entities
 
 ### 📖 Existing Read Operations
 The server currently has 27 read-only tools covering:
@@ -72,8 +75,9 @@ The server currently has 27 read-only tools covering:
 ### 5. Relationship Management
 **Tools to implement:**
 - ✅ `create_tag` - Create new tags for entities
-- `add_tag_to_entity` - Apply existing tags to entities
-- `remove_tag_from_entity` - Remove tags from entities
+- ✅ `add_tag_to_entity` - Apply existing tags to entities
+- ✅ `remove_tag_from_entity` - Remove tags from entities
+- ✅ `bulk_tag_entities` - Apply/remove tags to/from multiple entities
 - ✅ `update_party` - Update party details (partially implemented)
 - `update_custom_fields` - Set custom field values on entities
 
@@ -145,6 +149,9 @@ Each write operation should have tests for:
 - ✅ create_tag - Create tags for entities
 - ✅ create_note - Add notes to entities
 - ✅ update_note - Update existing notes
+- ✅ add_tag_to_entity - Apply tags to entities
+- ✅ remove_tag_from_entity - Remove tags from entities
+- ✅ bulk_tag_entities - Bulk tag operations
 - ✅ Environment variable control
 
 ### Phase 2 (Next Priority - Core Business Objects)
@@ -160,11 +167,12 @@ Each write operation should have tests for:
 - add_party_to_opportunity - Associate contacts with opportunities
 - add_party_to_project - Associate contacts with projects
 
-### Phase 4 (Relationship Management)
-- add_tag_to_entity - Apply tags to entities
-- remove_tag_from_entity - Remove tags
+### Phase 4 (Custom Fields & Delete Operations)
 - update_custom_fields - Manage custom field values
-- Delete operations (with safety checks)
+- delete_party - Remove contacts (with safety checks)
+- delete_opportunity - Remove opportunities
+- delete_tag - Remove unused tags
+- delete_note - Remove notes
 
 ### Phase 5 (Advanced Features)
 - Bulk operations (bulk_create, bulk_update)

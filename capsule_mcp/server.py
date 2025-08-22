@@ -9,7 +9,7 @@ Run locally:
 """
 
 import os
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from dotenv import load_dotenv
 
@@ -514,6 +514,122 @@ async def update_note(
     request_body = {"entry": entry_data}
     return await capsule_request("PUT", f"entries/{note_id}", json=request_body)
 
+# Define the add_tag_to_entity function separately so it can be conditionally registered
+async def add_tag_to_entity(
+    entity: EntityType,
+    entity_id: int,
+    tag_id: int,
+) -> Dict[str, Any]:
+    """Apply an existing tag to a party, opportunity, or case.
+    
+    Args:
+        entity: Entity type - "parties", "opportunities", or "kases"
+        entity_id: ID of the entity to tag
+        tag_id: ID of the tag to apply
+        
+    Returns:
+        Success response from the API
+    """
+    # Validate entity type
+    valid_entities = ["parties", "opportunities", "kases"]
+    if entity not in valid_entities:
+        raise ValueError(f"entity must be one of: {', '.join(valid_entities)}")
+    
+    # Apply the tag
+    request_body = {"tag": {"id": tag_id}}
+    return await capsule_request("POST", f"{entity}/{entity_id}/tags", json=request_body)
+
+
+# Define the remove_tag_from_entity function separately so it can be conditionally registered
+async def remove_tag_from_entity(
+    entity: EntityType,
+    entity_id: int,
+    tag_id: int,
+) -> Dict[str, Any]:
+    """Remove a tag from a party, opportunity, or case.
+    
+    Args:
+        entity: Entity type - "parties", "opportunities", or "kases"
+        entity_id: ID of the entity to untag
+        tag_id: ID of the tag to remove
+        
+    Returns:
+        Success response from the API (typically empty with 204 status)
+    """
+    # Validate entity type
+    valid_entities = ["parties", "opportunities", "kases"]
+    if entity not in valid_entities:
+        raise ValueError(f"entity must be one of: {', '.join(valid_entities)}")
+    
+    # Remove the tag
+    return await capsule_request("DELETE", f"{entity}/{entity_id}/tags/{tag_id}")
+
+
+# Define the bulk_tag_entities function separately so it can be conditionally registered
+async def bulk_tag_entities(
+    entity: EntityType,
+    entity_ids: List[int],
+    tag_ids: List[int],
+    operation: Literal["add", "remove"] = "add",
+) -> Dict[str, Any]:
+    """Apply or remove multiple tags to/from multiple entities at once.
+    
+    Args:
+        entity: Entity type - "parties", "opportunities", or "kases"
+        entity_ids: List of entity IDs to tag/untag
+        tag_ids: List of tag IDs to apply/remove
+        operation: Whether to "add" or "remove" the tags (default: "add")
+        
+    Returns:
+        Summary of successful and failed operations
+    """
+    # Validate entity type
+    valid_entities = ["parties", "opportunities", "kases"]
+    if entity not in valid_entities:
+        raise ValueError(f"entity must be one of: {', '.join(valid_entities)}")
+    
+    if not entity_ids:
+        raise ValueError("entity_ids must contain at least one ID")
+    
+    if not tag_ids:
+        raise ValueError("tag_ids must contain at least one tag ID")
+    
+    # Track results
+    results = {
+        "operation": operation,
+        "entity_type": entity,
+        "successful": [],
+        "failed": [],
+        "total_operations": len(entity_ids) * len(tag_ids)
+    }
+    
+    # Perform operations
+    for entity_id in entity_ids:
+        for tag_id in tag_ids:
+            try:
+                if operation == "add":
+                    request_body = {"tag": {"id": tag_id}}
+                    await capsule_request("POST", f"{entity}/{entity_id}/tags", json=request_body)
+                else:  # remove
+                    await capsule_request("DELETE", f"{entity}/{entity_id}/tags/{tag_id}")
+                
+                results["successful"].append({
+                    "entity_id": entity_id,
+                    "tag_id": tag_id
+                })
+            except Exception as e:
+                results["failed"].append({
+                    "entity_id": entity_id,
+                    "tag_id": tag_id,
+                    "error": str(e)
+                })
+    
+    results["success_count"] = len(results["successful"])
+    results["failure_count"] = len(results["failed"])
+    
+    return results
+
+
 # Register the write tools conditionally based on environment variable
 if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(create_party)
@@ -521,6 +637,9 @@ if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(create_tag)
     mcp.tool(create_note)
     mcp.tool(update_note)
+    mcp.tool(add_tag_to_entity)
+    mcp.tool(remove_tag_from_entity)
+    mcp.tool(bulk_tag_entities)
 
 
 @mcp.tool

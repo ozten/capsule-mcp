@@ -974,6 +974,251 @@ def test_update_note(client, headers, monkeypatch):
         assert data["entry"]["content"] == "Updated meeting notes with action items"
 
 
+def test_add_tag_to_entity(client, headers, monkeypatch):
+    """Test adding a tag to an entity."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the capsule_request function
+    async def mock_add_tag(method, endpoint, **kwargs):
+        assert method == "POST"
+        assert endpoint == "parties/12345/tags"
+        assert "json" in kwargs
+        assert "tag" in kwargs["json"]
+        assert kwargs["json"]["tag"]["id"] == 100
+        
+        # Return mock success response
+        return {"message": "Tag added successfully"}
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_add_tag)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "add_tag_to_entity",
+                    "arguments": {
+                        "entity": "parties",
+                        "entity_id": 12345,
+                        "tag_id": 100,
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert data["message"] == "Tag added successfully"
+
+
+def test_remove_tag_from_entity(client, headers, monkeypatch):
+    """Test removing a tag from an entity."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the capsule_request function
+    async def mock_remove_tag(method, endpoint, **kwargs):
+        assert method == "DELETE"
+        assert endpoint == "opportunities/5678/tags/200"
+        
+        # Return mock success response (typically empty for DELETE)
+        return {}
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_remove_tag)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "remove_tag_from_entity",
+                    "arguments": {
+                        "entity": "opportunities",
+                        "entity_id": 5678,
+                        "tag_id": 200,
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert data == {}
+
+
+def test_bulk_tag_entities(client, headers, monkeypatch):
+    """Test bulk tagging entities."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Track calls
+    call_count = 0
+    
+    # Mock the capsule_request function
+    async def mock_bulk_tag(method, endpoint, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        
+        # Should make 2 entities × 2 tags = 4 calls
+        assert method == "POST"
+        assert endpoint in ["kases/111/tags", "kases/222/tags"]
+        assert "json" in kwargs
+        assert "tag" in kwargs["json"]
+        assert kwargs["json"]["tag"]["id"] in [10, 20]
+        
+        # Return mock success response
+        return {"message": "Tag added"}
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_bulk_tag)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "bulk_tag_entities",
+                    "arguments": {
+                        "entity": "kases",
+                        "entity_ids": [111, 222],
+                        "tag_ids": [10, 20],
+                        "operation": "add",
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert data["operation"] == "add"
+        assert data["entity_type"] == "kases"
+        assert data["total_operations"] == 4
+        assert data["success_count"] == 4
+        assert data["failure_count"] == 0
+        assert len(data["successful"]) == 4
+
+
+def test_bulk_tag_entities_remove(client, headers, monkeypatch):
+    """Test bulk removing tags from entities."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Track calls
+    call_count = 0
+    
+    # Mock the capsule_request function
+    async def mock_bulk_untag(method, endpoint, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        
+        # Should make 1 entity × 3 tags = 3 calls
+        assert method == "DELETE"
+        assert endpoint in ["parties/333/tags/30", "parties/333/tags/31", "parties/333/tags/32"]
+        
+        # Simulate one failure
+        if call_count == 2:
+            raise Exception("Tag not found")
+        
+        return {}
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_bulk_untag)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "bulk_tag_entities",
+                    "arguments": {
+                        "entity": "parties",
+                        "entity_ids": [333],
+                        "tag_ids": [30, 31, 32],
+                        "operation": "remove",
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert data["operation"] == "remove"
+        assert data["entity_type"] == "parties"
+        assert data["total_operations"] == 3
+        assert data["success_count"] == 2
+        assert data["failure_count"] == 1
+        assert len(data["successful"]) == 2
+        assert len(data["failed"]) == 1
+        assert data["failed"][0]["error"] == "Tag not found"
+
+
 def test_update_note_validates_required_fields(client, headers, monkeypatch):
     """Test that update_note validates required fields."""
     import sys

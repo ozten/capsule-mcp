@@ -340,6 +340,21 @@ When write mode is enabled, the following operations become available:
   - Add descriptions to tags for better organization
   - Support for data tags
 
+- **`add_tag_to_entity`**: Apply existing tags to entities:
+  - Tag parties (contacts), opportunities, or cases
+  - Organize and categorize your CRM data
+  - Build segments for targeted actions
+
+- **`remove_tag_from_entity`**: Remove tags from entities:
+  - Untag parties, opportunities, or cases
+  - Clean up outdated categorizations
+  - Maintain accurate data organization
+
+- **`bulk_tag_entities`**: Efficiently manage tags at scale:
+  - Apply or remove multiple tags to/from multiple entities in one operation
+  - Perfect for bulk categorization or cleanup
+  - Provides detailed success/failure reporting for each operation
+
 ### Security Considerations
 
 - Write operations can modify your CRM data permanently
