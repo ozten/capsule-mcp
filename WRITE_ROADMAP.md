@@ -5,9 +5,12 @@ This document outlines the roadmap for implementing write operations in the Caps
 
 ## Current State
 
-### ✅ Implemented Write Operations
+### ✅ Implemented Write Operations (5 tools)
 - **create_party** - Create contacts (persons or organisations)
+- **update_party** - Update existing contacts with partial updates
 - **create_tag** - Create tags for parties, opportunities, or cases
+- **create_note** - Add notes to parties, opportunities, or projects
+- **update_note** - Update content of existing notes
 
 ### 📖 Existing Read Operations
 The server currently has 27 read-only tools covering:
@@ -56,7 +59,9 @@ The server currently has 27 read-only tools covering:
 
 ### 4. Timeline/Notes Management
 **Tools to implement:**
-- `create_note` - Add notes to parties, opportunities, or projects
+- ✅ `create_note` - Add notes to parties, opportunities, or projects
+- ✅ `update_note` - Update existing note content
+- `delete_note` - Remove notes (if supported)
 - `create_email_entry` - Log email communications (if supported)
 - `create_call_entry` - Log phone calls (if supported)
 - `create_meeting_entry` - Log meetings (if supported)
@@ -66,8 +71,10 @@ The server currently has 27 read-only tools covering:
 
 ### 5. Relationship Management
 **Tools to implement:**
+- ✅ `create_tag` - Create new tags for entities
 - `add_tag_to_entity` - Apply existing tags to entities
 - `remove_tag_from_entity` - Remove tags from entities
+- ✅ `update_party` - Update party details (partially implemented)
 - `update_custom_fields` - Set custom field values on entities
 
 **Rationale:** Enables better organization and segmentation of CRM data.
@@ -132,28 +139,38 @@ Each write operation should have tests for:
 
 ## Rollout Plan
 
-### Phase 1 (Current)
-- ✅ create_party
-- ✅ create_tag
-- Environment variable control
+### Phase 1 (Completed ✅)
+- ✅ create_party - Create new contacts
+- ✅ update_party - Update existing contacts
+- ✅ create_tag - Create tags for entities
+- ✅ create_note - Add notes to entities
+- ✅ update_note - Update existing notes
+- ✅ Environment variable control
 
-### Phase 2 (Next)
-- create_opportunity
-- create_task
-- create_note
+### Phase 2 (Next Priority - Core Business Objects)
+- create_opportunity - Create sales opportunities
+- update_opportunity - Update opportunity details
+- create_task - Create tasks with assignments
+- update_task - Update task details
+- complete_task - Mark tasks complete
 
-### Phase 3
-- update_opportunity
-- update_task
-- create_project
+### Phase 3 (Projects & Advanced Operations)
+- create_project - Create projects/cases
+- update_project - Update project details
+- add_party_to_opportunity - Associate contacts with opportunities
+- add_party_to_project - Associate contacts with projects
 
-### Phase 4
-- Relationship operations (add/remove tags, custom fields)
+### Phase 4 (Relationship Management)
+- add_tag_to_entity - Apply tags to entities
+- remove_tag_from_entity - Remove tags
+- update_custom_fields - Manage custom field values
 - Delete operations (with safety checks)
 
-### Phase 5
-- Bulk operations
-- Advanced features
+### Phase 5 (Advanced Features)
+- Bulk operations (bulk_create, bulk_update)
+- Attachment handling
+- Email/call/meeting entry logging
+- Advanced search and filtering
 
 ## Success Metrics
 
