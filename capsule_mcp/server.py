@@ -321,7 +321,7 @@ async def create_tag(
     description: Optional[str] = None,
     dataTag: bool = False,
 ) -> Dict[str, Any]:
-    """Create a new tag for parties, opportunities, or cases.
+    """Create a tag for organizing entities. Data tags can have custom fields attached.
     
     Args:
         entity: Entity type - "parties", "opportunities", or "kases" 
@@ -367,9 +367,9 @@ async def update_party(
     website: Optional[str] = None,
     websiteId: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Update an existing contact (person or organisation) in Capsule CRM.
+    """Update an existing contact with partial updates.
     
-    Only provided fields will be updated. Fields not included remain unchanged.
+    Only modifies provided fields, preserves all other data.
     
     Args:
         party_id: ID of the party to update (required)
@@ -442,8 +442,9 @@ async def create_note(
     opportunity_id: Optional[int] = None,
     project_id: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Create a note and attach it to a party, opportunity, or project.
+    """Create a note attached to a party, opportunity, or project.
     
+    Track interactions, meetings, and important information in the timeline.
     Exactly one of party_id, opportunity_id, or project_id must be provided.
     
     Args:
@@ -530,6 +531,8 @@ async def add_tag_to_entity(
 ) -> Dict[str, Any]:
     """Apply an existing tag to a party, opportunity, or case.
     
+    For categorization, filtering, and workflow automation. Tag must already exist.
+    
     Args:
         entity: Entity type - "parties", "opportunities", or "kases"
         entity_id: ID of the entity to tag
@@ -556,6 +559,8 @@ async def remove_tag_from_entity(
 ) -> Dict[str, Any]:
     """Remove a tag from a party, opportunity, or case.
     
+    Removes tag association only - tag itself continues to exist.
+    
     Args:
         entity: Entity type - "parties", "opportunities", or "kases"
         entity_id: ID of the entity to untag
@@ -580,7 +585,9 @@ async def bulk_tag_entities(
     tag_ids: List[int],
     operation: Literal["add", "remove"] = "add",
 ) -> Dict[str, Any]:
-    """Apply or remove multiple tags to/from multiple entities at once.
+    """Bulk apply or remove multiple tags to/from multiple entities.
+    
+    Single operation for mass tagging or cleanup.
     
     Args:
         entity: Entity type - "parties", "opportunities", or "kases"
@@ -654,7 +661,9 @@ async def create_opportunity(
     duration: Optional[int] = None,
     lost_reason: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Create a new sales opportunity.
+    """Create a sales opportunity in your pipeline.
+    
+    Track deals through sales stages. Must be linked to a contact and pipeline stage.
     
     Args:
         name: Name/title of the opportunity (required)
@@ -737,7 +746,9 @@ async def update_opportunity(
     closed_on: Optional[str] = None,
     lost_reason: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Update an existing opportunity with partial updates.
+    """Update an opportunity. Common: move pipeline stage, update value, change dates.
+    
+    Only modifies provided fields.
     
     Args:
         opportunity_id: ID of the opportunity to update (required)
@@ -822,10 +833,9 @@ async def add_party_to_opportunity(
     opportunity_id: int,
     party_id: int,
 ) -> Dict[str, Any]:
-    """Associate an additional party (contact) with an opportunity.
+    """Add additional party to opportunity (beyond primary contact).
     
-    This allows you to link multiple contacts to a single opportunity beyond
-    the primary party. Useful for tracking all stakeholders involved in a deal.
+    For tracking multiple stakeholders, decision makers, influencers in B2B deals.
     
     Args:
         opportunity_id: ID of the opportunity to add the party to (required)
@@ -846,10 +856,9 @@ async def remove_party_from_opportunity(
     opportunity_id: int,
     party_id: int,
 ) -> Dict[str, Any]:
-    """Remove an additional party (contact) from an opportunity.
+    """Remove additional party from opportunity.
     
-    This removes the association between a party and an opportunity. Note that
-    you cannot remove the primary party from an opportunity.
+    Cannot remove primary party - only additional contacts.
     
     Args:
         opportunity_id: ID of the opportunity to remove the party from (required)
@@ -875,7 +884,7 @@ async def create_task(
     case_id: Optional[int] = None,
     status: Optional[Literal["OPEN", "PENDING"]] = "OPEN",
 ) -> Dict[str, Any]:
-    """Create a new task.
+    """Create a task for tracking work items and follow-ups.
     
     Args:
         description: Short description of the task (required)
@@ -950,7 +959,9 @@ async def update_task(
     status: Optional[Literal["OPEN", "COMPLETED", "PENDING"]] = None,
     completed_at: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Update an existing task with partial updates.
+    """Update a task. Common: reschedule, reassign, update status.
+    
+    Only modifies provided fields.
     
     Args:
         task_id: ID of the task to update (required)
@@ -1043,9 +1054,7 @@ async def complete_task(
     task_id: int,
     completed_at: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Mark a task as completed.
-    
-    This is a convenience function that sets the task status to COMPLETED.
+    """Mark task as completed. Removes from active lists, keeps in history.
     
     Args:
         task_id: ID of the task to complete (required)
@@ -1070,9 +1079,9 @@ async def set_custom_field_value(
     field_id: int,
     value: Any,
 ) -> Dict[str, Any]:
-    """Set a custom field value on an entity.
+    """Set single custom field value on entity.
     
-    Sets or updates a single custom field value on a party, opportunity, or case.
+    Field must be defined first. For business-specific data beyond standard fields.
     
     Args:
         entity: Entity type - "parties", "opportunities", or "kases"
@@ -1106,9 +1115,9 @@ async def update_custom_field_values(
     entity_id: int,
     fields: List[Dict[str, Any]],
 ) -> Dict[str, Any]:
-    """Update multiple custom field values on an entity.
+    """Batch update multiple custom field values in one API call.
     
-    Sets or updates multiple custom field values in a single operation.
+    Fields must be defined first. Use list_custom_fields to see available fields.
     
     Args:
         entity: Entity type - "parties", "opportunities", or "kases"
@@ -1159,9 +1168,7 @@ async def clear_custom_field_value(
     entity_id: int,
     field_id: int,
 ) -> Dict[str, Any]:
-    """Clear a custom field value from an entity.
-    
-    Removes the value of a custom field, effectively unsetting it.
+    """Clear custom field value (reset to empty). Field definition remains.
     
     Args:
         entity: Entity type - "parties", "opportunities", or "kases"
@@ -1184,14 +1191,10 @@ async def clear_custom_field_value(
 async def delete_party(
     party_id: int,
 ) -> Dict[str, Any]:
-    """Permanently delete a party (contact or organisation) from Capsule CRM.
+    """Permanently delete a party (contact or organisation).
     
-    ⚠️ WARNING: This operation is IRREVERSIBLE. The party and all associated data
-    will be permanently deleted. This includes:
-    - All contact information
-    - All notes and timeline entries
-    - All custom field values
-    - All tags and associations
+    ⚠️ IRREVERSIBLE: Deletes ALL data including contacts, notes, timeline,
+    custom fields, tags, opportunities, tasks, and complete history.
     
     Args:
         party_id: ID of the party to delete (required)
@@ -1207,15 +1210,10 @@ async def delete_party(
 async def delete_opportunity(
     opportunity_id: int,
 ) -> Dict[str, Any]:
-    """Permanently delete an opportunity from Capsule CRM.
+    """Permanently delete an opportunity.
     
-    ⚠️ WARNING: This operation is IRREVERSIBLE. The opportunity and all associated data
-    will be permanently deleted. This includes:
-    - All opportunity details and history
-    - All associated notes and timeline entries
-    - All custom field values
-    - All tags and associations
-    - Links to parties and products
+    ⚠️ IRREVERSIBLE: Deletes ALL data including value/stage, timeline,
+    notes, custom fields, tags, contact links, and revenue tracking.
     
     Args:
         opportunity_id: ID of the opportunity to delete (required)
@@ -1230,15 +1228,10 @@ async def delete_opportunity(
 async def delete_task(
     task_id: int,
 ) -> Dict[str, Any]:
-    """Permanently delete a task from Capsule CRM.
+    """Permanently delete a task.
     
-    ⚠️ WARNING: This operation is IRREVERSIBLE. The task and all associated data
-    will be permanently deleted. This includes:
-    - All task details and history
-    - All completion information
-    - All custom field values
-    - All tags and associations
-    - Links to parties, opportunities, and cases
+    ⚠️ IRREVERSIBLE: Deletes ALL data including details, assignments,
+    completion history, custom fields, tags, and entity links.
     
     Args:
         task_id: ID of the task to delete (required)
@@ -1261,10 +1254,10 @@ async def create_custom_field(
     display_order: Optional[int] = None,
     capture_rule: Optional[Literal["person", "organisation"]] = None,
 ) -> Dict[str, Any]:
-    """Create a new custom field definition for parties, opportunities, or projects.
+    """Create a custom field definition for capturing business-specific data.
     
-    This creates the field definition that can then be used to set values on entities.
-    Note: To set values on entities, use the set_custom_field_value or update_custom_field_values tools.
+    Defines the schema. Use set_custom_field_value to populate values.
+    Types: text, date, list (dropdown), boolean, number, link.
     
     Args:
         entity_type: Type of entity the field applies to ("parties", "opportunities", or "kases")
