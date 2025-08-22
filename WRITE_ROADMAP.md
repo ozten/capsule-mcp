@@ -5,7 +5,7 @@ This document outlines the roadmap for implementing write operations in the Caps
 
 ## Current State
 
-### ✅ Implemented Write Operations (10 tools)
+### ✅ Implemented Write Operations (12 tools)
 - **create_party** - Create contacts (persons or organisations)
 - **update_party** - Update existing contacts with partial updates
 - **create_tag** - Create tags for parties, opportunities, or cases
@@ -16,6 +16,8 @@ This document outlines the roadmap for implementing write operations in the Caps
 - **bulk_tag_entities** - Apply/remove multiple tags to/from multiple entities
 - **create_opportunity** - Create new sales opportunities
 - **update_opportunity** - Update opportunity details and pipeline stage
+- **add_party_to_opportunity** - Associate additional contacts with opportunities
+- **remove_party_from_opportunity** - Remove contacts from opportunities
 
 ### 📖 Existing Read Operations
 The server currently has 27 read-only tools covering:
@@ -36,8 +38,9 @@ The server currently has 27 read-only tools covering:
 **Tools to implement:**
 - ✅ `create_opportunity` - Create new sales opportunities
 - ✅ `update_opportunity` - Update opportunity details, value, stage
+- ✅ `add_party_to_opportunity` - Associate additional contacts
+- ✅ `remove_party_from_opportunity` - Remove contacts from opportunities
 - `delete_opportunity` - Remove opportunities
-- `add_party_to_opportunity` - Associate additional contacts
 - `add_product_to_opportunity` - Add line items/products
 
 **Rationale:** Opportunities are central to CRM sales workflows and have the highest business impact.
@@ -156,6 +159,8 @@ Each write operation should have tests for:
 - ✅ bulk_tag_entities - Bulk tag operations
 - ✅ create_opportunity - Create sales opportunities
 - ✅ update_opportunity - Update opportunity details
+- ✅ add_party_to_opportunity - Associate contacts with opportunities
+- ✅ remove_party_from_opportunity - Remove contacts from opportunities
 - ✅ Environment variable control
 
 ### Phase 2 (Next Priority - Tasks & Projects)
@@ -166,17 +171,17 @@ Each write operation should have tests for:
 - update_project - Update project details
 
 ### Phase 3 (Advanced Associations)
-- add_party_to_opportunity - Associate contacts with opportunities
 - add_party_to_project - Associate contacts with projects
 - add_product_to_opportunity - Add line items/products
 - delete_opportunity - Remove opportunities
+- delete_party - Remove contacts
 
 ### Phase 4 (Custom Fields & Delete Operations)
 - update_custom_fields - Manage custom field values
-- delete_party - Remove contacts (with safety checks)
-- delete_opportunity - Remove opportunities
 - delete_tag - Remove unused tags
 - delete_note - Remove notes
+- delete_task - Remove tasks
+- delete_project - Remove projects
 
 ### Phase 5 (Advanced Features)
 - Bulk operations (bulk_create, bulk_update)

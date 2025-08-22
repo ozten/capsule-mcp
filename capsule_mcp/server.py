@@ -809,6 +809,51 @@ async def update_opportunity(
     return await capsule_request("PUT", f"opportunities/{opportunity_id}", json=request_body)
 
 
+# Define the add_party_to_opportunity function separately so it can be conditionally registered
+async def add_party_to_opportunity(
+    opportunity_id: int,
+    party_id: int,
+) -> Dict[str, Any]:
+    """Associate an additional party (contact) with an opportunity.
+    
+    This allows you to link multiple contacts to a single opportunity beyond
+    the primary party. Useful for tracking all stakeholders involved in a deal.
+    
+    Args:
+        opportunity_id: ID of the opportunity to add the party to (required)
+        party_id: ID of the party (contact) to associate with the opportunity (required)
+        
+    Returns:
+        Success response from the API
+    """
+    # Build the request to add the party
+    request_body = {"party": {"id": party_id}}
+    
+    # Send the request to add the party to the opportunity
+    return await capsule_request("POST", f"opportunities/{opportunity_id}/parties", json=request_body)
+
+
+# Define the remove_party_from_opportunity function separately so it can be conditionally registered
+async def remove_party_from_opportunity(
+    opportunity_id: int,
+    party_id: int,
+) -> Dict[str, Any]:
+    """Remove an additional party (contact) from an opportunity.
+    
+    This removes the association between a party and an opportunity. Note that
+    you cannot remove the primary party from an opportunity.
+    
+    Args:
+        opportunity_id: ID of the opportunity to remove the party from (required)
+        party_id: ID of the party (contact) to remove from the opportunity (required)
+        
+    Returns:
+        Success response from the API (typically empty with 204 status)
+    """
+    # Send the request to remove the party from the opportunity
+    return await capsule_request("DELETE", f"opportunities/{opportunity_id}/parties/{party_id}")
+
+
 # Register the write tools conditionally based on environment variable
 if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(create_party)
@@ -821,6 +866,8 @@ if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(bulk_tag_entities)
     mcp.tool(create_opportunity)
     mcp.tool(update_opportunity)
+    mcp.tool(add_party_to_opportunity)
+    mcp.tool(remove_party_from_opportunity)
 
 
 @mcp.tool

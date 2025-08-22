@@ -367,6 +367,16 @@ When write mode is enabled, the following operations become available:
   - Change ownership between users or teams
   - Mark opportunities as won/lost with reasons
 
+- **`add_party_to_opportunity`**: Associate additional contacts with opportunities:
+  - Link multiple stakeholders to a single deal
+  - Track all decision makers and influencers
+  - Build complete relationship maps for opportunities
+
+- **`remove_party_from_opportunity`**: Remove contacts from opportunities:
+  - Clean up outdated associations
+  - Remove contacts no longer involved in deals
+  - Maintain accurate stakeholder lists
+
 ### Security Considerations
 
 - Write operations can modify your CRM data permanently

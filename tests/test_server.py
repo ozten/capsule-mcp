@@ -1459,6 +1459,111 @@ def test_update_opportunity_validates_required_fields(client, headers, monkeypat
         assert "At least one field must be provided to update" in error_text
 
 
+def test_add_party_to_opportunity(client, headers, monkeypatch):
+    """Test adding a party to an opportunity."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the capsule_request function
+    async def mock_add_party(method, endpoint, **kwargs):
+        assert method == "POST"
+        assert endpoint == "opportunities/12345/parties"
+        assert "json" in kwargs
+        assert "party" in kwargs["json"]
+        assert kwargs["json"]["party"]["id"] == 67890
+        
+        # Return mock success response
+        return {"message": "Party added to opportunity successfully"}
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_add_party)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "add_party_to_opportunity",
+                    "arguments": {
+                        "opportunity_id": 12345,
+                        "party_id": 67890,
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert data["message"] == "Party added to opportunity successfully"
+
+
+def test_remove_party_from_opportunity(client, headers, monkeypatch):
+    """Test removing a party from an opportunity."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the capsule_request function
+    async def mock_remove_party(method, endpoint, **kwargs):
+        assert method == "DELETE"
+        assert endpoint == "opportunities/12345/parties/67890"
+        
+        # Return mock success response (typically empty for DELETE)
+        return {}
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_remove_party)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "remove_party_from_opportunity",
+                    "arguments": {
+                        "opportunity_id": 12345,
+                        "party_id": 67890,
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert data == {}
+
+
 def test_update_note_validates_required_fields(client, headers, monkeypatch):
     """Test that update_note validates required fields."""
     import sys
