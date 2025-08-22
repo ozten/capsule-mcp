@@ -420,6 +420,13 @@ When write mode is enabled, the following operations become available:
   - Reset fields to undefined state
   - Clean up entity records
 
+- **`create_custom_field`**: Create new custom field definitions:
+  - Define custom fields for parties, opportunities, or projects
+  - Support for text, date, list, boolean, number, and link field types
+  - Configure list options for dropdown fields
+  - Associate fields with data tags for better organization
+  - Set capture rules for party-specific fields
+
 ### Available Delete Operations
 
 When delete mode is enabled (requires both `ENABLE_CAPSULECRM_WRITES="true"` and `ENABLE_CAPSULECRM_DELETES="true"`):

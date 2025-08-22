@@ -1250,6 +1250,88 @@ async def delete_task(
     return await capsule_request("DELETE", f"tasks/{task_id}")
 
 
+async def create_custom_field(
+    entity_type: Literal["parties", "opportunities", "kases"],
+    field_type: Literal["text", "date", "list", "boolean", "number", "link"],
+    name: str,
+    options: Optional[List[str]] = None,
+    tag_name: Optional[str] = None,
+    tag_id: Optional[int] = None,
+    description: Optional[str] = None,
+    display_order: Optional[int] = None,
+    capture_rule: Optional[Literal["person", "organisation"]] = None,
+) -> Dict[str, Any]:
+    """Create a new custom field definition for parties, opportunities, or projects.
+    
+    This creates the field definition that can then be used to set values on entities.
+    Note: To set values on entities, use the set_custom_field_value or update_custom_field_values tools.
+    
+    Args:
+        entity_type: Type of entity the field applies to ("parties", "opportunities", or "kases")
+        field_type: Type of field ("text", "date", "list", "boolean", "number", or "link")
+        name: Name of the custom field (required)
+        options: List of options for "list" type fields (required for list type)
+        tag_name: Name of data tag to associate with (optional)
+        tag_id: ID of data tag to associate with (optional)
+        description: Description of the field (optional)
+        display_order: Display order for the field (optional)
+        capture_rule: For party fields, limit to "person" or "organisation" (optional)
+        
+    Returns:
+        Created field definition details
+        
+    Examples:
+        # Create a text field for parties
+        create_custom_field("parties", "text", "Employee ID")
+        
+        # Create a list field with options
+        create_custom_field("opportunities", "list", "Priority", 
+                          options=["Low", "Medium", "High"])
+        
+        # Create a field associated with a data tag
+        create_custom_field("parties", "boolean", "Verified",
+                          tag_name="Important Customers")
+    """
+    # Build the field definition
+    definition: Dict[str, Any] = {
+        "type": field_type,
+        "name": name,
+    }
+    
+    # Add options for list type (required)
+    if field_type == "list":
+        if not options:
+            raise ValueError("Options are required for list type fields")
+        definition["options"] = options
+    elif options:
+        raise ValueError(f"Options can only be provided for list type fields, not {field_type}")
+    
+    # Add optional tag association
+    if tag_name or tag_id:
+        tag = {}
+        if tag_name:
+            tag["name"] = tag_name
+        if tag_id:
+            tag["id"] = tag_id
+        definition["tag"] = tag
+    
+    # Add other optional fields
+    if description is not None:
+        definition["description"] = description
+    if display_order is not None:
+        definition["displayOrder"] = display_order
+    if capture_rule is not None:
+        if entity_type != "parties":
+            raise ValueError("capture_rule can only be used with party fields")
+        definition["captureRule"] = capture_rule
+    
+    # Send the request
+    endpoint = f"{entity_type}/fields/definitions"
+    payload = {"definition": definition}
+    
+    return await capsule_request("POST", endpoint, json=payload)
+
+
 # Register the write tools conditionally based on environment variable
 if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(create_party)
@@ -1270,6 +1352,7 @@ if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(set_custom_field_value)
     mcp.tool(update_custom_field_values)
     mcp.tool(clear_custom_field_value)
+    mcp.tool(create_custom_field)
 
 # Register delete tools only when explicitly enabled
 if ENABLE_CAPSULECRM_DELETES:

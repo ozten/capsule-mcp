@@ -5,7 +5,7 @@ This document outlines the roadmap for implementing write operations in the Caps
 
 ## Current State
 
-### ✅ Implemented Write Operations (18 tools)
+### ✅ Implemented Write Operations (19 tools)
 - **create_party** - Create contacts (persons or organisations)
 - **update_party** - Update existing contacts with partial updates
 - **create_tag** - Create tags for parties, opportunities, or cases
@@ -24,6 +24,7 @@ This document outlines the roadmap for implementing write operations in the Caps
 - **set_custom_field_value** - Set single custom field values on entities
 - **update_custom_field_values** - Batch update multiple custom fields
 - **clear_custom_field_value** - Remove custom field values
+- **create_custom_field** - Create custom field definitions for entities
 
 ### ✅ Implemented Delete Operations (3 tools - requires ENABLE_CAPSULECRM_DELETES)
 - **delete_party** - Permanently delete contacts (irreversible operation)
@@ -114,7 +115,7 @@ The server currently has 27 read-only tools covering:
 ### 7. Pipeline Configuration
 **Tools to implement:**
 - `create_milestone` - Add opportunity milestones (if API supports)
-- `create_custom_field` - Define custom fields (if API supports)
+- ✅ `create_custom_field` - Define custom fields (API supported)
 
 **Rationale:** Usually one-time setup but valuable for customization.
 
@@ -182,6 +183,7 @@ Each write operation should have tests for:
 - ✅ set_custom_field_value - Set custom field values
 - ✅ update_custom_field_values - Batch update custom fields
 - ✅ clear_custom_field_value - Clear custom field values
+- ✅ create_custom_field - Create custom field definitions
 - ✅ Environment variable control
 
 ### Phase 2 (Next Priority - Projects)
