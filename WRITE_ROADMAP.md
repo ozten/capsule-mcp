@@ -25,6 +25,9 @@ This document outlines the roadmap for implementing write operations in the Caps
 - **update_custom_field_values** - Batch update multiple custom fields
 - **clear_custom_field_value** - Remove custom field values
 
+### ✅ Implemented Delete Operations (1 tool - requires ENABLE_CAPSULECRM_DELETES)
+- **delete_party** - Permanently delete contacts (with confirmation required)
+
 ### 📖 Existing Read Operations
 The server currently has 27 read-only tools covering:
 - Contacts/Parties (list, search, get)
@@ -131,6 +134,8 @@ The server currently has 27 read-only tools covering:
 3. **Idempotency**: Where possible, make operations idempotent
 4. **Audit Trail**: Consider logging all write operations
 5. **Rate Limiting**: Respect Capsule API rate limits
+6. **Delete Protection**: Delete operations require both `ENABLE_CAPSULECRM_WRITES=true` and `ENABLE_CAPSULECRM_DELETES=true`
+7. **Confirmation Required**: All delete operations require explicit `confirm=true` parameter
 
 ### Technical Patterns
 1. **Consistent Naming**: Use `create_`, `update_`, `delete_` prefixes
@@ -186,7 +191,7 @@ Each write operation should have tests for:
 - add_product_to_opportunity - Add line items/products
 
 ### Phase 4 (Delete Operations)
-- delete_party - Remove contacts
+- ✅ delete_party - Remove contacts (implemented with ENABLE_CAPSULECRM_DELETES)
 - delete_opportunity - Remove opportunities
 - delete_task - Remove tasks
 - delete_project - Remove projects

@@ -79,7 +79,8 @@ Add this to your Claude Desktop config file:
       ],
       "env": {
         "CAPSULE_API_TOKEN": "your_capsule_api_token_here",
-        "ENABLE_CAPSULECRM_WRITES": "false"
+        "ENABLE_CAPSULECRM_WRITES": "false",
+        "ENABLE_CAPSULECRM_DELETES": "false"
       }
     }
   }
@@ -119,7 +120,8 @@ Or manually add this to your Cursor MCP settings:
     ],
     "env": {
       "CAPSULE_API_TOKEN": "your_capsule_api_token_here",
-      "ENABLE_CAPSULECRM_WRITES": "false"
+      "ENABLE_CAPSULECRM_WRITES": "false",
+      "ENABLE_CAPSULECRM_DELETES": "false"
     }
   }
 }
@@ -311,6 +313,15 @@ Set the `ENABLE_CAPSULECRM_WRITES` environment variable to `"true"` in your conf
 - **Cursor**: Add to the env section in settings 
 - **Deployment**: Set in your hosting platform's environment variables
 
+### Enabling Delete Mode (Extra Caution Required)
+
+Delete operations require **both** write mode and explicit delete enablement:
+
+1. Set `ENABLE_CAPSULECRM_WRITES="true"` (required first)
+2. Set `ENABLE_CAPSULECRM_DELETES="true"` (enables delete operations)
+
+⚠️ **WARNING**: Delete operations are **IRREVERSIBLE**. Deleted data cannot be recovered. Enable with extreme caution and ensure proper backups.
+
 ### Available Write Operations
 
 When write mode is enabled, the following operations become available:
@@ -408,6 +419,16 @@ When write mode is enabled, the following operations become available:
   - Clear unwanted or outdated custom field data
   - Reset fields to undefined state
   - Clean up entity records
+
+### Available Delete Operations
+
+When delete mode is enabled (requires both `ENABLE_CAPSULECRM_WRITES="true"` and `ENABLE_CAPSULECRM_DELETES="true"`):
+
+- **`delete_party`**: Permanently delete contacts or organisations:
+  - ⚠️ **IRREVERSIBLE**: Deletes all associated data permanently
+  - Requires explicit confirmation (`confirm=True`)
+  - Removes all notes, custom fields, tags, and associations
+  - Use with extreme caution - no undo available
 
 ### Security Considerations
 

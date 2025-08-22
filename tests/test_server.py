@@ -2014,6 +2014,137 @@ def test_clear_custom_field_value(client, headers, monkeypatch):
         assert data == {}
 
 
+def test_delete_party_requires_confirmation(client, headers, monkeypatch):
+    """Test that delete_party requires explicit confirmation."""
+    import sys
+    
+    # Enable both writes and deletes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    monkeypatch.setenv("ENABLE_CAPSULECRM_DELETES", "true")
+    
+    # Remove the module from cache to force reimport with new env vars
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Re-create the app to pick up the environment changes
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    with TestClient(test_app) as test_client:
+        # Test without confirmation
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "delete_party",
+                    "arguments": {
+                        "party_id": 12345,
+                        "confirm": False,  # Should fail
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        result = response.json()
+        assert result.get("result", {}).get("isError") is True
+        error_text = result["result"]["content"][0]["text"]
+        assert "requires explicit confirmation" in error_text
+
+
+def test_delete_party_with_confirmation(client, headers, monkeypatch):
+    """Test deleting a party with confirmation."""
+    import sys
+    
+    # Enable both writes and deletes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    monkeypatch.setenv("ENABLE_CAPSULECRM_DELETES", "true")
+    
+    # Remove the module from cache to force reimport with new env vars
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the capsule_request function
+    async def mock_delete_party(method, endpoint, **kwargs):
+        assert method == "DELETE"
+        assert endpoint == "parties/12345"
+        
+        # Return mock success response (typically empty for DELETE)
+        return {}
+    
+    # Re-create the app to pick up the environment changes
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_delete_party)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "delete_party",
+                    "arguments": {
+                        "party_id": 12345,
+                        "confirm": True,  # Confirmed
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert data == {}
+
+
+def test_delete_party_not_available_without_deletes_enabled(client, headers, monkeypatch):
+    """Test that delete_party is not available when ENABLE_CAPSULECRM_DELETES is false."""
+    import sys
+    
+    # Enable writes but not deletes
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    monkeypatch.setenv("ENABLE_CAPSULECRM_DELETES", "false")
+    
+    # Remove the module from cache to force reimport with new env vars
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Re-create the app to pick up the environment changes
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    with TestClient(test_app) as test_client:
+        # Get the list of available tools
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/list",
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        # Check that delete_party is not in the list
+        result = response.json()
+        tools = result.get("result", {}).get("tools", [])
+        tool_names = [tool["name"] for tool in tools]
+        assert "delete_party" not in tool_names
+        # But write tools should still be available
+        assert "create_party" in tool_names
+
+
 def test_update_note_validates_required_fields(client, headers, monkeypatch):
     """Test that update_note validates required fields."""
     import sys

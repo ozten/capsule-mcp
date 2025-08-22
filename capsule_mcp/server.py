@@ -42,9 +42,17 @@ CAPSULE_API_TOKEN = os.getenv("CAPSULE_API_TOKEN")
 # MCP API key for authenticating requests to the MCP endpoints
 MCP_API_KEY = os.getenv("MCP_API_KEY")
 
-# Enable write operations (create, update, delete) to Capsule CRM
+# Enable write operations (create, update) to Capsule CRM
 # Set to "true" to enable write tools, defaults to read-only mode
 ENABLE_CAPSULECRM_WRITES = os.getenv("ENABLE_CAPSULECRM_WRITES", "false").lower() == "true"
+
+# Enable delete operations (requires write operations to also be enabled)
+# Set to "true" to enable delete tools, defaults to disabled for safety
+# Note: Delete operations are irreversible - use with extreme caution
+ENABLE_CAPSULECRM_DELETES = (
+    os.getenv("ENABLE_CAPSULECRM_DELETES", "false").lower() == "true" 
+    and ENABLE_CAPSULECRM_WRITES
+)
 
 
 # ---------------------------------------------------------------------------
@@ -1172,6 +1180,42 @@ async def clear_custom_field_value(
     return await capsule_request("DELETE", f"{entity}/{entity_id}/fields/{field_id}")
 
 
+# Define the delete_party function separately so it can be conditionally registered
+async def delete_party(
+    party_id: int,
+    confirm: bool = False,
+) -> Dict[str, Any]:
+    """Permanently delete a party (contact or organisation) from Capsule CRM.
+    
+    ⚠️ WARNING: This operation is IRREVERSIBLE. The party and all associated data
+    will be permanently deleted. This includes:
+    - All contact information
+    - All notes and timeline entries
+    - All custom field values
+    - All tags and associations
+    
+    Args:
+        party_id: ID of the party to delete (required)
+        confirm: Must be set to True to confirm the deletion (required safety check)
+        
+    Returns:
+        Success response from the API (typically empty with 204 status)
+        
+    Raises:
+        ValueError: If confirm is not True
+    """
+    # Safety check - require explicit confirmation
+    if not confirm:
+        raise ValueError(
+            "Delete operation requires explicit confirmation. "
+            "Set confirm=True to proceed with permanent deletion. "
+            "WARNING: This action cannot be undone!"
+        )
+    
+    # Send the delete request
+    return await capsule_request("DELETE", f"parties/{party_id}")
+
+
 # Register the write tools conditionally based on environment variable
 if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(create_party)
@@ -1192,6 +1236,10 @@ if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(set_custom_field_value)
     mcp.tool(update_custom_field_values)
     mcp.tool(clear_custom_field_value)
+
+# Register delete tools only when explicitly enabled
+if ENABLE_CAPSULECRM_DELETES:
+    mcp.tool(delete_party)
 
 
 @mcp.tool
