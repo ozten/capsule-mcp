@@ -5,7 +5,7 @@ This document outlines the roadmap for implementing write operations in the Caps
 
 ## Current State
 
-### ✅ Implemented Write Operations (8 tools)
+### ✅ Implemented Write Operations (10 tools)
 - **create_party** - Create contacts (persons or organisations)
 - **update_party** - Update existing contacts with partial updates
 - **create_tag** - Create tags for parties, opportunities, or cases
@@ -14,6 +14,8 @@ This document outlines the roadmap for implementing write operations in the Caps
 - **add_tag_to_entity** - Apply existing tags to entities
 - **remove_tag_from_entity** - Remove tags from entities
 - **bulk_tag_entities** - Apply/remove multiple tags to/from multiple entities
+- **create_opportunity** - Create new sales opportunities
+- **update_opportunity** - Update opportunity details and pipeline stage
 
 ### 📖 Existing Read Operations
 The server currently has 27 read-only tools covering:
@@ -32,8 +34,8 @@ The server currently has 27 read-only tools covering:
 
 ### 1. Opportunities Management
 **Tools to implement:**
-- `create_opportunity` - Create new sales opportunities
-- `update_opportunity` - Update opportunity details, value, stage
+- ✅ `create_opportunity` - Create new sales opportunities
+- ✅ `update_opportunity` - Update opportunity details, value, stage
 - `delete_opportunity` - Remove opportunities
 - `add_party_to_opportunity` - Associate additional contacts
 - `add_product_to_opportunity` - Add line items/products
@@ -152,20 +154,22 @@ Each write operation should have tests for:
 - ✅ add_tag_to_entity - Apply tags to entities
 - ✅ remove_tag_from_entity - Remove tags from entities
 - ✅ bulk_tag_entities - Bulk tag operations
+- ✅ create_opportunity - Create sales opportunities
+- ✅ update_opportunity - Update opportunity details
 - ✅ Environment variable control
 
-### Phase 2 (Next Priority - Core Business Objects)
-- create_opportunity - Create sales opportunities
-- update_opportunity - Update opportunity details
+### Phase 2 (Next Priority - Tasks & Projects)
 - create_task - Create tasks with assignments
 - update_task - Update task details
 - complete_task - Mark tasks complete
-
-### Phase 3 (Projects & Advanced Operations)
 - create_project - Create projects/cases
 - update_project - Update project details
+
+### Phase 3 (Advanced Associations)
 - add_party_to_opportunity - Associate contacts with opportunities
 - add_party_to_project - Associate contacts with projects
+- add_product_to_opportunity - Add line items/products
+- delete_opportunity - Remove opportunities
 
 ### Phase 4 (Custom Fields & Delete Operations)
 - update_custom_fields - Manage custom field values

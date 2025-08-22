@@ -355,6 +355,18 @@ When write mode is enabled, the following operations become available:
   - Perfect for bulk categorization or cleanup
   - Provides detailed success/failure reporting for each operation
 
+- **`create_opportunity`**: Create new sales opportunities:
+  - Set up opportunities with contact, pipeline stage, and owner
+  - Define value, probability, and expected close date
+  - Support for team ownership and custom duration settings
+  - Track opportunities through your sales pipeline
+
+- **`update_opportunity`**: Update existing opportunities:
+  - Move opportunities through pipeline stages
+  - Update value, probability, and close dates
+  - Change ownership between users or teams
+  - Mark opportunities as won/lost with reasons
+
 ### Security Considerations
 
 - Write operations can modify your CRM data permanently

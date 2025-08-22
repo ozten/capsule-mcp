@@ -1219,6 +1219,246 @@ def test_bulk_tag_entities_remove(client, headers, monkeypatch):
         assert data["failed"][0]["error"] == "Tag not found"
 
 
+def test_create_opportunity(client, headers, monkeypatch):
+    """Test creating an opportunity."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the capsule_request function
+    async def mock_create_opportunity(method, endpoint, **kwargs):
+        assert method == "POST"
+        assert endpoint == "opportunities"
+        assert "json" in kwargs
+        assert "opportunity" in kwargs["json"]
+        opp = kwargs["json"]["opportunity"]
+        assert opp["name"] == "New Enterprise Deal"
+        assert opp["party"]["id"] == 12345
+        assert opp["milestone"]["id"] == 100
+        assert opp["owner"]["id"] == 5
+        assert opp["value"]["amount"] == 50000
+        assert opp["value"]["currency"] == "USD"
+        assert opp["probability"] == 75
+        
+        # Return mock created opportunity
+        return {
+            "opportunity": {
+                "id": 99999,
+                "name": "New Enterprise Deal",
+                "party": {"id": 12345, "name": "Acme Corp"},
+                "milestone": {"id": 100, "name": "Qualified"},
+                "owner": {"id": 5, "name": "John Seller"},
+                "value": {"amount": 50000, "currency": "USD"},
+                "probability": 75,
+                "expectedCloseOn": "2024-12-31",
+                "createdAt": "2024-01-01T10:00:00Z"
+            }
+        }
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_create_opportunity)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "create_opportunity",
+                    "arguments": {
+                        "name": "New Enterprise Deal",
+                        "party_id": 12345,
+                        "milestone_id": 100,
+                        "owner_id": 5,
+                        "value": 50000,
+                        "currency": "USD",
+                        "expected_close_on": "2024-12-31",
+                        "probability": 75,
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert "opportunity" in data
+        assert data["opportunity"]["id"] == 99999
+        assert data["opportunity"]["name"] == "New Enterprise Deal"
+        assert data["opportunity"]["value"]["amount"] == 50000
+
+
+def test_create_opportunity_validates_owner_or_team(client, headers, monkeypatch):
+    """Test that create_opportunity requires either owner_id or team_id."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    with TestClient(test_app) as test_client:
+        # Test with neither owner_id nor team_id
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "create_opportunity",
+                    "arguments": {
+                        "name": "Test Opportunity",
+                        "party_id": 12345,
+                        "milestone_id": 100,
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        result = response.json()
+        assert result.get("result", {}).get("isError") is True
+        error_text = result["result"]["content"][0]["text"]
+        assert "Either owner_id or team_id must be provided" in error_text
+
+
+def test_update_opportunity(client, headers, monkeypatch):
+    """Test updating an opportunity."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the capsule_request function
+    async def mock_update_opportunity(method, endpoint, **kwargs):
+        assert method == "PUT"
+        assert endpoint == "opportunities/99999"
+        assert "json" in kwargs
+        assert "opportunity" in kwargs["json"]
+        opp = kwargs["json"]["opportunity"]
+        assert opp["name"] == "Updated Enterprise Deal"
+        assert opp["probability"] == 90
+        assert opp["value"]["amount"] == 75000
+        assert "milestone" in opp
+        assert opp["milestone"]["id"] == 200
+        
+        # Return mock updated opportunity
+        return {
+            "opportunity": {
+                "id": 99999,
+                "name": "Updated Enterprise Deal",
+                "party": {"id": 12345, "name": "Acme Corp"},
+                "milestone": {"id": 200, "name": "Negotiation"},
+                "owner": {"id": 5, "name": "John Seller"},
+                "value": {"amount": 75000, "currency": "USD"},
+                "probability": 90,
+                "expectedCloseOn": "2024-11-30",
+                "updatedAt": "2024-01-02T10:00:00Z"
+            }
+        }
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_update_opportunity)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "update_opportunity",
+                    "arguments": {
+                        "opportunity_id": 99999,
+                        "name": "Updated Enterprise Deal",
+                        "milestone_id": 200,
+                        "value": 75000,
+                        "probability": 90,
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert "opportunity" in data
+        assert data["opportunity"]["id"] == 99999
+        assert data["opportunity"]["name"] == "Updated Enterprise Deal"
+        assert data["opportunity"]["probability"] == 90
+        assert data["opportunity"]["value"]["amount"] == 75000
+
+
+def test_update_opportunity_validates_required_fields(client, headers, monkeypatch):
+    """Test that update_opportunity requires at least one field."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    with TestClient(test_app) as test_client:
+        # Test with no fields to update
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "update_opportunity",
+                    "arguments": {
+                        "opportunity_id": 99999,
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        result = response.json()
+        assert result.get("result", {}).get("isError") is True
+        error_text = result["result"]["content"][0]["text"]
+        assert "At least one field must be provided to update" in error_text
+
+
 def test_update_note_validates_required_fields(client, headers, monkeypatch):
     """Test that update_note validates required fields."""
     import sys

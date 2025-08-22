@@ -630,6 +630,185 @@ async def bulk_tag_entities(
     return results
 
 
+# Define the create_opportunity function separately so it can be conditionally registered
+async def create_opportunity(
+    name: str,
+    party_id: int,
+    milestone_id: int,
+    description: Optional[str] = None,
+    owner_id: Optional[int] = None,
+    team_id: Optional[int] = None,
+    value: Optional[float] = None,
+    currency: Optional[str] = None,
+    expected_close_on: Optional[str] = None,
+    probability: Optional[int] = None,
+    duration_basis: Optional[Literal["FIXED", "HOUR", "DAY", "WEEK", "MONTH", "QUARTER", "YEAR"]] = None,
+    duration: Optional[int] = None,
+    lost_reason: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Create a new sales opportunity.
+    
+    Args:
+        name: Name/title of the opportunity (required)
+        party_id: ID of the main contact/party for this opportunity (required)
+        milestone_id: ID of the pipeline stage/milestone (required)
+        description: Detailed description of the opportunity
+        owner_id: ID of the user who owns this opportunity (required unless team_id is provided)
+        team_id: ID of the team that owns this opportunity (required unless owner_id is provided)
+        value: Monetary value of the opportunity
+        currency: Currency code (e.g., "USD", "EUR", "GBP")
+        expected_close_on: Expected close date (ISO8601 format, e.g., "2024-12-31")
+        probability: Win probability percentage (0-100)
+        duration_basis: Basis for duration calculation
+        duration: Duration value (used with duration_basis)
+        lost_reason: Reason if opportunity is lost
+        
+    Returns:
+        The created opportunity object with its assigned ID
+    """
+    # Validate that either owner_id or team_id is provided
+    if not owner_id and not team_id:
+        raise ValueError("Either owner_id or team_id must be provided")
+    
+    # Build the opportunity data
+    opportunity_data = {
+        "name": name,
+        "party": {"id": party_id},
+        "milestone": {"id": milestone_id},
+    }
+    
+    # Add optional fields
+    if description:
+        opportunity_data["description"] = description
+    
+    if owner_id:
+        opportunity_data["owner"] = {"id": owner_id}
+    elif team_id:
+        opportunity_data["team"] = {"id": team_id}
+    
+    # Handle value and currency together
+    if value is not None:
+        value_data = {"amount": value}
+        if currency:
+            value_data["currency"] = currency
+        opportunity_data["value"] = value_data
+    
+    if expected_close_on:
+        opportunity_data["expectedCloseOn"] = expected_close_on
+    
+    if probability is not None:
+        opportunity_data["probability"] = probability
+    
+    if duration_basis:
+        opportunity_data["durationBasis"] = duration_basis
+        if duration is not None:
+            opportunity_data["duration"] = duration
+    
+    if lost_reason:
+        opportunity_data["lostReason"] = lost_reason
+    
+    # Send the request to create the opportunity
+    request_body = {"opportunity": opportunity_data}
+    return await capsule_request("POST", "opportunities", json=request_body)
+
+
+# Define the update_opportunity function separately so it can be conditionally registered
+async def update_opportunity(
+    opportunity_id: int,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    milestone_id: Optional[int] = None,
+    owner_id: Optional[int] = None,
+    team_id: Optional[int] = None,
+    value: Optional[float] = None,
+    currency: Optional[str] = None,
+    expected_close_on: Optional[str] = None,
+    probability: Optional[int] = None,
+    duration_basis: Optional[Literal["FIXED", "HOUR", "DAY", "WEEK", "MONTH", "QUARTER", "YEAR"]] = None,
+    duration: Optional[int] = None,
+    closed_on: Optional[str] = None,
+    lost_reason: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Update an existing opportunity with partial updates.
+    
+    Args:
+        opportunity_id: ID of the opportunity to update (required)
+        name: Updated name/title of the opportunity
+        description: Updated description
+        milestone_id: ID of the new pipeline stage/milestone
+        owner_id: ID of the new owner
+        team_id: ID of the new team
+        value: Updated monetary value
+        currency: Updated currency code
+        expected_close_on: Updated expected close date (ISO8601 format)
+        probability: Updated win probability percentage (0-100)
+        duration_basis: Updated duration basis
+        duration: Updated duration value
+        closed_on: Date the opportunity was closed (ISO8601 format)
+        lost_reason: Updated/set lost reason
+        
+    Returns:
+        The updated opportunity object
+    """
+    # Build the update data - only include provided fields
+    opportunity_data = {}
+    
+    if name is not None:
+        opportunity_data["name"] = name
+    
+    if description is not None:
+        opportunity_data["description"] = description
+    
+    if milestone_id is not None:
+        opportunity_data["milestone"] = {"id": milestone_id}
+    
+    # Handle owner/team updates
+    if owner_id is not None:
+        opportunity_data["owner"] = {"id": owner_id}
+        # Clear team if setting owner
+        if "team" not in opportunity_data:
+            opportunity_data["team"] = None
+    elif team_id is not None:
+        opportunity_data["team"] = {"id": team_id}
+        # Clear owner if setting team
+        if "owner" not in opportunity_data:
+            opportunity_data["owner"] = None
+    
+    # Handle value updates
+    if value is not None or currency is not None:
+        # Get current opportunity to preserve existing value/currency if not updating both
+        if value is not None:
+            value_data = {"amount": value}
+            if currency:
+                value_data["currency"] = currency
+            opportunity_data["value"] = value_data
+    
+    if expected_close_on is not None:
+        opportunity_data["expectedCloseOn"] = expected_close_on
+    
+    if probability is not None:
+        opportunity_data["probability"] = probability
+    
+    if duration_basis is not None:
+        opportunity_data["durationBasis"] = duration_basis
+        if duration is not None:
+            opportunity_data["duration"] = duration
+    
+    if closed_on is not None:
+        opportunity_data["closedOn"] = closed_on
+    
+    if lost_reason is not None:
+        opportunity_data["lostReason"] = lost_reason
+    
+    # Ensure we have something to update
+    if not opportunity_data:
+        raise ValueError("At least one field must be provided to update")
+    
+    # Send the update request
+    request_body = {"opportunity": opportunity_data}
+    return await capsule_request("PUT", f"opportunities/{opportunity_id}", json=request_body)
+
+
 # Register the write tools conditionally based on environment variable
 if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(create_party)
@@ -640,6 +819,8 @@ if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(add_tag_to_entity)
     mcp.tool(remove_tag_from_entity)
     mcp.tool(bulk_tag_entities)
+    mcp.tool(create_opportunity)
+    mcp.tool(update_opportunity)
 
 
 @mcp.tool
