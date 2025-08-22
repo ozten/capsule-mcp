@@ -451,6 +451,13 @@ When delete mode is enabled (requires both `ENABLE_CAPSULECRM_WRITES="true"` and
   - Use with extreme caution - no undo available
   - Agent/client layer should confirm with user before calling
 
+- **`delete_tag`**: Permanently delete tags:
+  - ⚠️ **IRREVERSIBLE**: Deletes tag from the system permanently
+  - Automatically removes tag from ALL entities it was assigned to
+  - Affects parties, opportunities, and projects simultaneously
+  - Use with extreme caution - no undo available
+  - Agent/client layer should confirm with user before calling
+
 ### Security Considerations
 
 - Write operations can modify your CRM data permanently

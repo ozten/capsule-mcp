@@ -1243,6 +1243,26 @@ async def delete_task(
     return await capsule_request("DELETE", f"tasks/{task_id}")
 
 
+async def delete_tag(
+    entity: EntityType,
+    tag_id: int,
+) -> Dict[str, Any]:
+    """Permanently delete a tag from the system.
+    
+    ⚠️ IRREVERSIBLE: Removes tag from ALL entities it was assigned to
+    (parties, opportunities, and projects).
+    
+    Args:
+        entity: Entity type context - "parties", "opportunities", or "kases" 
+        tag_id: ID of the tag to delete (required)
+        
+    Returns:
+        Success response from the API (typically empty with 204 status)
+    """
+    # Send the delete request
+    return await capsule_request("DELETE", f"{entity}/tags/{tag_id}")
+
+
 async def create_custom_field(
     entity_type: Literal["parties", "opportunities", "kases"],
     field_type: Literal["text", "date", "list", "boolean", "number", "link"],
@@ -1352,6 +1372,7 @@ if ENABLE_CAPSULECRM_DELETES:
     mcp.tool(delete_party)
     mcp.tool(delete_opportunity)
     mcp.tool(delete_task)
+    mcp.tool(delete_tag)
 
 
 @mcp.tool
