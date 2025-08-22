@@ -2014,49 +2014,8 @@ def test_clear_custom_field_value(client, headers, monkeypatch):
         assert data == {}
 
 
-def test_delete_party_requires_confirmation(client, headers, monkeypatch):
-    """Test that delete_party requires explicit confirmation."""
-    import sys
-    
-    # Enable both writes and deletes before importing
-    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
-    monkeypatch.setenv("ENABLE_CAPSULECRM_DELETES", "true")
-    
-    # Remove the module from cache to force reimport with new env vars
-    if "capsule_mcp.server" in sys.modules:
-        del sys.modules["capsule_mcp.server"]
-    
-    # Re-create the app to pick up the environment changes
-    from capsule_mcp.server import create_app
-    test_app = create_app()
-    
-    with TestClient(test_app) as test_client:
-        # Test without confirmation
-        response = test_client.post(
-            "/mcp/",
-            json={
-                "jsonrpc": "2.0",
-                "method": "tools/call",
-                "params": {
-                    "name": "delete_party",
-                    "arguments": {
-                        "party_id": 12345,
-                        "confirm": False,  # Should fail
-                    },
-                },
-                "id": 1,
-            },
-            headers=headers,
-        )
-        assert response.status_code == 200
-        result = response.json()
-        assert result.get("result", {}).get("isError") is True
-        error_text = result["result"]["content"][0]["text"]
-        assert "requires explicit confirmation" in error_text
-
-
-def test_delete_party_with_confirmation(client, headers, monkeypatch):
-    """Test deleting a party with confirmation."""
+def test_delete_party(client, headers, monkeypatch):
+    """Test deleting a party."""
     import sys
     
     # Enable both writes and deletes before importing
@@ -2093,7 +2052,6 @@ def test_delete_party_with_confirmation(client, headers, monkeypatch):
                     "name": "delete_party",
                     "arguments": {
                         "party_id": 12345,
-                        "confirm": True,  # Confirmed
                     },
                 },
                 "id": 1,

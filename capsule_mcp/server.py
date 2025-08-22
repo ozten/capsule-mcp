@@ -1183,7 +1183,6 @@ async def clear_custom_field_value(
 # Define the delete_party function separately so it can be conditionally registered
 async def delete_party(
     party_id: int,
-    confirm: bool = False,
 ) -> Dict[str, Any]:
     """Permanently delete a party (contact or organisation) from Capsule CRM.
     
@@ -1196,22 +1195,10 @@ async def delete_party(
     
     Args:
         party_id: ID of the party to delete (required)
-        confirm: Must be set to True to confirm the deletion (required safety check)
         
     Returns:
         Success response from the API (typically empty with 204 status)
-        
-    Raises:
-        ValueError: If confirm is not True
     """
-    # Safety check - require explicit confirmation
-    if not confirm:
-        raise ValueError(
-            "Delete operation requires explicit confirmation. "
-            "Set confirm=True to proceed with permanent deletion. "
-            "WARNING: This action cannot be undone!"
-        )
-    
     # Send the delete request
     return await capsule_request("DELETE", f"parties/{party_id}")
 

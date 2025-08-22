@@ -426,9 +426,9 @@ When delete mode is enabled (requires both `ENABLE_CAPSULECRM_WRITES="true"` and
 
 - **`delete_party`**: Permanently delete contacts or organisations:
   - ⚠️ **IRREVERSIBLE**: Deletes all associated data permanently
-  - Requires explicit confirmation (`confirm=True`)
   - Removes all notes, custom fields, tags, and associations
   - Use with extreme caution - no undo available
+  - Agent/client layer should confirm with user before calling
 
 ### Security Considerations
 
