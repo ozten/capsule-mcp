@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Capsule CRM MCP (Model Context Protocol) server that exposes Capsule CRM API endpoints as AI tools. It's built using FastMCP framework with FastAPI backend and provides read-only access to Capsule CRM data.
+This is a Capsule CRM MCP (Model Context Protocol) server that exposes Capsule CRM API endpoints as AI tools. It's built using FastMCP framework with FastAPI backend and provides both read-only and write access to Capsule CRM data (write access is disabled by default).
 
 The server can run in two modes:
 - **stdio mode**: For direct integration with Claude Desktop and other MCP clients
@@ -59,6 +59,7 @@ uv sync --dev                       # Install with dev dependencies (black, isor
 
 ### Tool Categories
 
+#### Read Operations (Always Available)
 - **Contacts**: `list_contacts`, `search_contacts`, `list_recent_contacts`, `get_contact`
 - **Sales**: `list_opportunities`, `list_open_opportunities`, `get_opportunity`
 - **Support**: `list_cases`, `search_cases`, `get_case`
@@ -70,10 +71,14 @@ uv sync --dev                       # Install with dev dependencies (black, isor
 - **Organization**: `list_tags`, `get_tag`, `list_users`, `get_user`
 - **System**: `list_currencies`
 
+#### Write Operations (Only when ENABLE_CAPSULECRM_WRITES=true)
+- **Contacts**: `create_party` - Create new person or organisation contacts
+
 ## Environment Configuration
 
 - **`CAPSULE_API_TOKEN`**: Required for production use (get from Capsule → My Preferences → API Authentication)
 - **`CAPSULE_BASE_URL`**: Defaults to `https://api.capsulecrm.com/api/v2`
+- **`ENABLE_CAPSULECRM_WRITES`**: Set to `"true"` to enable write operations (create, update, delete). Defaults to `"false"` for read-only mode
 - **Test mode**: Automatically detected via `PYTEST_CURRENT_TEST` environment variable
 
 ## Testing Approach

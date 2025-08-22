@@ -9,7 +9,7 @@ Run locally:
 """
 
 import os
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Optional
 
 from dotenv import load_dotenv
 
@@ -41,6 +41,10 @@ CAPSULE_API_TOKEN = os.getenv("CAPSULE_API_TOKEN")
 
 # MCP API key for authenticating requests to the MCP endpoints
 MCP_API_KEY = os.getenv("MCP_API_KEY")
+
+# Enable write operations (create, update, delete) to Capsule CRM
+# Set to "true" to enable write tools, defaults to read-only mode
+ENABLE_CAPSULECRM_WRITES = os.getenv("ENABLE_CAPSULECRM_WRITES", "false").lower() == "true"
 
 
 # ---------------------------------------------------------------------------
@@ -228,6 +232,83 @@ async def list_recent_contacts(
         "perPage": per_page,
     }
     return await capsule_request("POST", "parties/filters/results", json=filter_data)
+
+
+# ---------------------------------------------------------------------------
+# Write Operations (only available when ENABLE_CAPSULECRM_WRITES=true)
+# ---------------------------------------------------------------------------
+
+# Define the create_party function separately so it can be conditionally registered
+async def create_party(
+    type: Literal["person", "organisation"],
+    firstName: Optional[str] = None,
+    lastName: Optional[str] = None,
+    name: Optional[str] = None,
+    title: Optional[str] = None,
+    jobTitle: Optional[str] = None,
+    emailAddress: Optional[str] = None,
+    phoneNumber: Optional[str] = None,
+    website: Optional[str] = None,
+    about: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Create a new contact (person or organisation) in Capsule CRM.
+    
+    Args:
+        type: Type of party - either "person" or "organisation"
+        firstName: First name (required for person)
+        lastName: Last name (required for person)
+        name: Organisation name (required for organisation)
+        title: Title/salutation for person (e.g., Mr, Ms, Dr)
+        jobTitle: Job title for person
+        emailAddress: Primary email address
+        phoneNumber: Primary phone number
+        website: Website URL
+        about: Notes or description about the contact
+        
+    Returns:
+        The created party object with its assigned ID and details
+    """
+    # Build the party object based on type
+    party_data = {"type": type}
+    
+    if type == "person":
+        if not firstName:
+            raise ValueError("Field 'firstName' is required for person type (got: None or empty)")
+        if not lastName:
+            raise ValueError("Field 'lastName' is required for person type (got: None or empty)")
+        party_data["firstName"] = firstName
+        party_data["lastName"] = lastName
+        if title:
+            party_data["title"] = title
+        if jobTitle:
+            party_data["jobTitle"] = jobTitle
+    elif type == "organisation":
+        if not name:
+            raise ValueError("Field 'name' is required for organisation type (got: None or empty)")
+        party_data["name"] = name
+    else:
+        raise ValueError(f"Field 'type' must be either 'person' or 'organisation' (got: {type})")
+    
+    # Add optional contact details
+    if emailAddress:
+        party_data["emailAddresses"] = [{"type": "Work", "address": emailAddress}]
+    
+    if phoneNumber:
+        party_data["phoneNumbers"] = [{"type": "Work", "number": phoneNumber}]
+    
+    if website:
+        party_data["websites"] = [{"type": "Work", "service": "URL", "address": website}]
+    
+    if about:
+        party_data["about"] = about
+    
+    # Send the request to create the party
+    request_body = {"party": party_data}
+    return await capsule_request("POST", "parties", json=request_body)
+
+# Register the write tools conditionally based on environment variable
+if ENABLE_CAPSULECRM_WRITES:
+    mcp.tool(create_party)
 
 
 @mcp.tool

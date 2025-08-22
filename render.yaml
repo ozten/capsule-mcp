@@ -9,5 +9,7 @@ services:
         sync: false
       - key: MCP_API_KEY
         sync: false
+      - key: ENABLE_CAPSULECRM_WRITES
+        sync: false
     healthCheckPath: /mcp/
     plan: free

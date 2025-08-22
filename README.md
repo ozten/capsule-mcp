@@ -15,8 +15,9 @@ Transform how you work with your Capsule CRM data by asking AI assistants natura
 - *"Find all support cases from last week"*
 - *"List tasks assigned to Sarah"*
 - *"What products do we sell in the UK?"*
+- *"Create a new contact for John Doe at Acme Corp"* (when write mode is enabled)
 
-**🔒 Read-Only & Secure** — No write access to your CRM data  
+**🔒 Secure by Default** — Read-only access by default, write operations require explicit enablement  
 **🚀 Instant Setup** — Works with any MCP-compatible AI assistant  
 **📊 Complete Coverage** — Access contacts, sales, support, tasks, projects & more
 
@@ -77,7 +78,8 @@ Add this to your Claude Desktop config file:
         "capsule_mcp/server.py"
       ],
       "env": {
-        "CAPSULE_API_TOKEN": "your_capsule_api_token_here"
+        "CAPSULE_API_TOKEN": "your_capsule_api_token_here",
+        "ENABLE_CAPSULECRM_WRITES": "false"
       }
     }
   }
@@ -116,7 +118,8 @@ Or manually add this to your Cursor MCP settings:
       "capsule_mcp/server.py"
     ],
     "env": {
-      "CAPSULE_API_TOKEN": "your_capsule_api_token_here"
+      "CAPSULE_API_TOKEN": "your_capsule_api_token_here",
+      "ENABLE_CAPSULECRM_WRITES": "false"
     }
   }
 }
@@ -222,6 +225,7 @@ Want to deploy the MCP server remotely so multiple users can access it via HTTP?
 5. **Set environment variables** in Render dashboard:
    - `CAPSULE_API_TOKEN`: Your Capsule CRM API token
    - `MCP_API_KEY`: A secure random API key for authentication (see generation instructions below)
+   - `ENABLE_CAPSULECRM_WRITES`: (Optional) Set to `"true"` to enable write operations (defaults to `"false"` for read-only mode)
 
 6. **Deploy** - Render will automatically build and deploy your service
 
@@ -295,6 +299,36 @@ curl -X POST https://your-service.onrender.com/mcp/ \
 
 ---
 
+## Write Operations (Optional)
+
+By default, this MCP server operates in **read-only mode** for security. To enable write operations:
+
+### Enabling Write Mode
+
+Set the `ENABLE_CAPSULECRM_WRITES` environment variable to `"true"` in your configuration:
+
+- **Claude Desktop**: Add to the env section in your config
+- **Cursor**: Add to the env section in settings 
+- **Deployment**: Set in your hosting platform's environment variables
+
+### Available Write Operations
+
+When write mode is enabled, the following operations become available:
+
+- **`create_party`**: Create new contacts (persons or organisations) with full details including:
+  - Basic info (name, title, job title)
+  - Contact details (email, phone, website)
+  - Notes and descriptions
+
+### Security Considerations
+
+- Write operations can modify your CRM data permanently
+- Ensure your API token has appropriate permissions
+- Consider using a separate API token with limited scope for write operations
+- Regularly audit write operations in your Capsule CRM activity log
+
+---
+
 ## For Developers
 
 ### Development Setup
@@ -302,7 +336,9 @@ curl -X POST https://your-service.onrender.com/mcp/ \
 **Environment Variables (for development):**
 ```bash
 cp .env.example .env
-# Edit .env and set CAPSULE_API_TOKEN=your_token_here
+# Edit .env and set:
+# CAPSULE_API_TOKEN=your_token_here
+# ENABLE_CAPSULECRM_WRITES=false  # Set to "true" to enable write operations
 ```
 
 **Run Tests:**
