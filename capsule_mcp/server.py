@@ -1055,6 +1055,123 @@ async def complete_task(
     )
 
 
+# Define the set_custom_field_value function separately so it can be conditionally registered
+async def set_custom_field_value(
+    entity: EntityType,
+    entity_id: int,
+    field_id: int,
+    value: Any,
+) -> Dict[str, Any]:
+    """Set a custom field value on an entity.
+    
+    Sets or updates a single custom field value on a party, opportunity, or case.
+    
+    Args:
+        entity: Entity type - "parties", "opportunities", or "kases"
+        entity_id: ID of the entity to set the field value on
+        field_id: ID of the custom field definition
+        value: The value to set (string, number, date, or boolean depending on field type)
+        
+    Returns:
+        The updated entity with the custom field value set
+    """
+    # Validate entity type
+    valid_entities = ["parties", "opportunities", "kases"]
+    if entity not in valid_entities:
+        raise ValueError(f"entity must be one of: {', '.join(valid_entities)}")
+    
+    # Build the field data
+    field_data = {
+        "field": {
+            "id": field_id,
+            "value": value
+        }
+    }
+    
+    # Send the request to set the field value
+    return await capsule_request("PUT", f"{entity}/{entity_id}/fields/{field_id}", json=field_data)
+
+
+# Define the update_custom_field_values function separately so it can be conditionally registered
+async def update_custom_field_values(
+    entity: EntityType,
+    entity_id: int,
+    fields: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Update multiple custom field values on an entity.
+    
+    Sets or updates multiple custom field values in a single operation.
+    
+    Args:
+        entity: Entity type - "parties", "opportunities", or "kases"
+        entity_id: ID of the entity to update field values on
+        fields: List of field updates, each containing:
+                - id: The field definition ID
+                - value: The value to set
+                
+    Returns:
+        The updated entity with all custom field values set
+        
+    Example:
+        fields=[
+            {"id": 123, "value": "Custom Value"},
+            {"id": 456, "value": 1000},
+            {"id": 789, "value": "2024-12-31"}
+        ]
+    """
+    # Validate entity type
+    valid_entities = ["parties", "opportunities", "kases"]
+    if entity not in valid_entities:
+        raise ValueError(f"entity must be one of: {', '.join(valid_entities)}")
+    
+    if not fields:
+        raise ValueError("fields list must contain at least one field update")
+    
+    # Format fields for the API
+    formatted_fields = []
+    for field in fields:
+        if "id" not in field or "value" not in field:
+            raise ValueError("Each field must have 'id' and 'value' properties")
+        formatted_fields.append({
+            "id": field["id"],
+            "value": field["value"]
+        })
+    
+    # Build the request body
+    request_body = {"fields": formatted_fields}
+    
+    # Send the request to update all field values
+    # Note: This endpoint typically updates the entity with the new field values
+    return await capsule_request("PUT", f"{entity}/{entity_id}/fields", json=request_body)
+
+
+# Define the clear_custom_field_value function separately so it can be conditionally registered
+async def clear_custom_field_value(
+    entity: EntityType,
+    entity_id: int,
+    field_id: int,
+) -> Dict[str, Any]:
+    """Clear a custom field value from an entity.
+    
+    Removes the value of a custom field, effectively unsetting it.
+    
+    Args:
+        entity: Entity type - "parties", "opportunities", or "kases"
+        entity_id: ID of the entity to clear the field value from
+        field_id: ID of the custom field definition to clear
+        
+    Returns:
+        Success response from the API
+    """
+    # Validate entity type
+    valid_entities = ["parties", "opportunities", "kases"]
+    if entity not in valid_entities:
+        raise ValueError(f"entity must be one of: {', '.join(valid_entities)}")
+    
+    # Send the request to clear the field value
+    return await capsule_request("DELETE", f"{entity}/{entity_id}/fields/{field_id}")
+
+
 # Register the write tools conditionally based on environment variable
 if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(create_party)
@@ -1072,6 +1189,9 @@ if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(create_task)
     mcp.tool(update_task)
     mcp.tool(complete_task)
+    mcp.tool(set_custom_field_value)
+    mcp.tool(update_custom_field_values)
+    mcp.tool(clear_custom_field_value)
 
 
 @mcp.tool

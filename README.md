@@ -394,6 +394,21 @@ When write mode is enabled, the following operations become available:
   - Optional custom completion time
   - Streamlined workflow for task closure
 
+- **`set_custom_field_value`**: Set custom field values on entities:
+  - Update single custom field values on parties, opportunities, or cases
+  - Support for text, number, date, and boolean field types
+  - Maintain entity-specific data requirements
+
+- **`update_custom_field_values`**: Update multiple custom fields at once:
+  - Batch update multiple custom field values in one operation
+  - Efficient for forms with many custom fields
+  - Reduces API calls for better performance
+
+- **`clear_custom_field_value`**: Remove custom field values:
+  - Clear unwanted or outdated custom field data
+  - Reset fields to undefined state
+  - Clean up entity records
+
 ### Security Considerations
 
 - Write operations can modify your CRM data permanently

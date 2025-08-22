@@ -5,7 +5,7 @@ This document outlines the roadmap for implementing write operations in the Caps
 
 ## Current State
 
-### ✅ Implemented Write Operations (15 tools)
+### ✅ Implemented Write Operations (18 tools)
 - **create_party** - Create contacts (persons or organisations)
 - **update_party** - Update existing contacts with partial updates
 - **create_tag** - Create tags for parties, opportunities, or cases
@@ -21,6 +21,9 @@ This document outlines the roadmap for implementing write operations in the Caps
 - **create_task** - Create tasks with due dates and assignments
 - **update_task** - Update task details and status
 - **complete_task** - Mark tasks as completed
+- **set_custom_field_value** - Set single custom field values on entities
+- **update_custom_field_values** - Batch update multiple custom fields
+- **clear_custom_field_value** - Remove custom field values
 
 ### 📖 Existing Read Operations
 The server currently has 27 read-only tools covering:
@@ -87,7 +90,9 @@ The server currently has 27 read-only tools covering:
 - ✅ `remove_tag_from_entity` - Remove tags from entities
 - ✅ `bulk_tag_entities` - Apply/remove tags to/from multiple entities
 - ✅ `update_party` - Update party details (partially implemented)
-- `update_custom_fields` - Set custom field values on entities
+- ✅ `set_custom_field_value` - Set single custom field values
+- ✅ `update_custom_field_values` - Batch update multiple custom fields
+- ✅ `clear_custom_field_value` - Remove custom field values
 
 **Rationale:** Enables better organization and segmentation of CRM data.
 
@@ -167,6 +172,9 @@ Each write operation should have tests for:
 - ✅ create_task - Create tasks with assignments
 - ✅ update_task - Update task details
 - ✅ complete_task - Mark tasks complete
+- ✅ set_custom_field_value - Set custom field values
+- ✅ update_custom_field_values - Batch update custom fields
+- ✅ clear_custom_field_value - Clear custom field values
 - ✅ Environment variable control
 
 ### Phase 2 (Next Priority - Projects)
@@ -176,16 +184,14 @@ Each write operation should have tests for:
 
 ### Phase 3 (Advanced Associations)
 - add_product_to_opportunity - Add line items/products
-- delete_opportunity - Remove opportunities
-- delete_party - Remove contacts
-- delete_task - Remove tasks
 
-### Phase 4 (Custom Fields & Delete Operations)
-- update_custom_fields - Manage custom field values
-- delete_tag - Remove unused tags
-- delete_note - Remove notes
+### Phase 4 (Delete Operations)
+- delete_party - Remove contacts
+- delete_opportunity - Remove opportunities
 - delete_task - Remove tasks
 - delete_project - Remove projects
+- delete_tag - Remove unused tags
+- delete_note - Remove notes
 
 ### Phase 5 (Advanced Features)
 - Bulk operations (bulk_create, bulk_update)

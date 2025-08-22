@@ -1818,6 +1818,202 @@ def test_complete_task(client, headers, monkeypatch):
         assert "completedAt" in data["task"]
 
 
+def test_set_custom_field_value(client, headers, monkeypatch):
+    """Test setting a custom field value on an entity."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the capsule_request function
+    async def mock_set_field(method, endpoint, **kwargs):
+        assert method == "PUT"
+        assert endpoint == "parties/12345/fields/100"
+        assert "json" in kwargs
+        assert "field" in kwargs["json"]
+        field = kwargs["json"]["field"]
+        assert field["id"] == 100
+        assert field["value"] == "Custom Value"
+        
+        # Return mock success response
+        return {
+            "party": {
+                "id": 12345,
+                "name": "Test Party",
+                "fields": [
+                    {"id": 100, "value": "Custom Value", "definition": {"name": "Industry"}}
+                ]
+            }
+        }
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_set_field)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "set_custom_field_value",
+                    "arguments": {
+                        "entity": "parties",
+                        "entity_id": 12345,
+                        "field_id": 100,
+                        "value": "Custom Value",
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert "party" in data
+        assert data["party"]["fields"][0]["value"] == "Custom Value"
+
+
+def test_update_custom_field_values(client, headers, monkeypatch):
+    """Test updating multiple custom field values."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the capsule_request function
+    async def mock_update_fields(method, endpoint, **kwargs):
+        assert method == "PUT"
+        assert endpoint == "opportunities/5678/fields"
+        assert "json" in kwargs
+        assert "fields" in kwargs["json"]
+        fields = kwargs["json"]["fields"]
+        assert len(fields) == 3
+        assert fields[0]["id"] == 101
+        assert fields[0]["value"] == "Technology"
+        assert fields[1]["id"] == 102
+        assert fields[1]["value"] == 5000
+        assert fields[2]["id"] == 103
+        assert fields[2]["value"] == "2024-12-31"
+        
+        # Return mock success response
+        return {
+            "opportunity": {
+                "id": 5678,
+                "name": "Test Opportunity",
+                "fields": [
+                    {"id": 101, "value": "Technology"},
+                    {"id": 102, "value": 5000},
+                    {"id": 103, "value": "2024-12-31"}
+                ]
+            }
+        }
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_update_fields)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "update_custom_field_values",
+                    "arguments": {
+                        "entity": "opportunities",
+                        "entity_id": 5678,
+                        "fields": [
+                            {"id": 101, "value": "Technology"},
+                            {"id": 102, "value": 5000},
+                            {"id": 103, "value": "2024-12-31"}
+                        ],
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert "opportunity" in data
+        assert len(data["opportunity"]["fields"]) == 3
+
+
+def test_clear_custom_field_value(client, headers, monkeypatch):
+    """Test clearing a custom field value."""
+    import sys
+    
+    # Enable writes before importing
+    monkeypatch.setenv("ENABLE_CAPSULECRM_WRITES", "true")
+    
+    # Remove the module from cache to force reimport with new env var
+    if "capsule_mcp.server" in sys.modules:
+        del sys.modules["capsule_mcp.server"]
+    
+    # Mock the capsule_request function
+    async def mock_clear_field(method, endpoint, **kwargs):
+        assert method == "DELETE"
+        assert endpoint == "kases/9999/fields/200"
+        
+        # Return mock success response (typically empty for DELETE)
+        return {}
+    
+    # Re-create the app to pick up the environment change
+    from capsule_mcp.server import create_app
+    test_app = create_app()
+    
+    # Mock after reimporting
+    import capsule_mcp.server
+    monkeypatch.setattr(capsule_mcp.server, "capsule_request", mock_clear_field)
+    
+    with TestClient(test_app) as test_client:
+        response = test_client.post(
+            "/mcp/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "clear_custom_field_value",
+                    "arguments": {
+                        "entity": "kases",
+                        "entity_id": 9999,
+                        "field_id": 200,
+                    },
+                },
+                "id": 1,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        
+        payload = response.json()["result"]["content"][0]["text"]
+        data = json.loads(payload)
+        assert data == {}
+
+
 def test_update_note_validates_required_fields(client, headers, monkeypatch):
     """Test that update_note validates required fields."""
     import sys
