@@ -430,6 +430,13 @@ When delete mode is enabled (requires both `ENABLE_CAPSULECRM_WRITES="true"` and
   - Use with extreme caution - no undo available
   - Agent/client layer should confirm with user before calling
 
+- **`delete_opportunity`**: Permanently delete opportunities:
+  - ⚠️ **IRREVERSIBLE**: Deletes opportunity and all history permanently
+  - Removes all notes, custom fields, tags, and associations
+  - Deletes links to parties and products
+  - Use with extreme caution - no undo available
+  - Agent/client layer should confirm with user before calling
+
 ### Security Considerations
 
 - Write operations can modify your CRM data permanently

@@ -25,8 +25,9 @@ This document outlines the roadmap for implementing write operations in the Caps
 - **update_custom_field_values** - Batch update multiple custom fields
 - **clear_custom_field_value** - Remove custom field values
 
-### ✅ Implemented Delete Operations (1 tool - requires ENABLE_CAPSULECRM_DELETES)
+### ✅ Implemented Delete Operations (2 tools - requires ENABLE_CAPSULECRM_DELETES)
 - **delete_party** - Permanently delete contacts (irreversible operation)
+- **delete_opportunity** - Permanently delete opportunities (irreversible operation)
 
 ### 📖 Existing Read Operations
 The server currently has 27 read-only tools covering:
@@ -49,7 +50,7 @@ The server currently has 27 read-only tools covering:
 - ✅ `update_opportunity` - Update opportunity details, value, stage
 - ✅ `add_party_to_opportunity` - Associate additional contacts
 - ✅ `remove_party_from_opportunity` - Remove contacts from opportunities
-- `delete_opportunity` - Remove opportunities
+- ✅ `delete_opportunity` - Remove opportunities
 - `add_product_to_opportunity` - Add line items/products
 
 **Rationale:** Opportunities are central to CRM sales workflows and have the highest business impact.
@@ -192,7 +193,7 @@ Each write operation should have tests for:
 
 ### Phase 4 (Delete Operations)
 - ✅ delete_party - Remove contacts (implemented with ENABLE_CAPSULECRM_DELETES)
-- delete_opportunity - Remove opportunities
+- ✅ delete_opportunity - Remove opportunities (implemented with ENABLE_CAPSULECRM_DELETES)
 - delete_task - Remove tasks
 - delete_project - Remove projects
 - delete_tag - Remove unused tags

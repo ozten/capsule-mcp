@@ -1203,6 +1203,30 @@ async def delete_party(
     return await capsule_request("DELETE", f"parties/{party_id}")
 
 
+# Define the delete_opportunity function separately so it can be conditionally registered
+async def delete_opportunity(
+    opportunity_id: int,
+) -> Dict[str, Any]:
+    """Permanently delete an opportunity from Capsule CRM.
+    
+    ⚠️ WARNING: This operation is IRREVERSIBLE. The opportunity and all associated data
+    will be permanently deleted. This includes:
+    - All opportunity details and history
+    - All associated notes and timeline entries
+    - All custom field values
+    - All tags and associations
+    - Links to parties and products
+    
+    Args:
+        opportunity_id: ID of the opportunity to delete (required)
+        
+    Returns:
+        Success response from the API (typically empty with 204 status)
+    """
+    # Send the delete request
+    return await capsule_request("DELETE", f"opportunities/{opportunity_id}")
+
+
 # Register the write tools conditionally based on environment variable
 if ENABLE_CAPSULECRM_WRITES:
     mcp.tool(create_party)
@@ -1227,6 +1251,7 @@ if ENABLE_CAPSULECRM_WRITES:
 # Register delete tools only when explicitly enabled
 if ENABLE_CAPSULECRM_DELETES:
     mcp.tool(delete_party)
+    mcp.tool(delete_opportunity)
 
 
 @mcp.tool
